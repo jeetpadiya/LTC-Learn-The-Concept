@@ -8,19 +8,24 @@ import {
   ChevronRight,
   HelpCircle,
   Clock,
+  BookOpen,
 } from "lucide-react";
 
 const SORTING_TOPICS = [
   { id: "bubble", title: "Bubble Sort", desc: "Adjacent compare & swap" },
   { id: "selection", title: "Selection Sort", desc: "Find minimum & place" },
   { id: "insertion", title: "Insertion Sort", desc: "Shift & insert into sublist" },
+  { id: "merge", title: "Merge Sort", desc: "Divide & conquer, auxiliary merge" },
   { id: "quick", title: "Quick Sort", desc: "Divide & conquer partition" },
+  { id: "heapsort", title: "Heap Sort", desc: "In-place max-heap sift-down" },
+  { id: "radix", title: "Radix Sort", desc: "Non-comparative digit buckets" },
 ];
 
 const DATA_STRUCTURE_TOPICS = [
   { id: "array", title: "Array & Dynamic Array", desc: "Contiguous Memory, 2x Doubling, Shifting" },
   { id: "heap", title: "Binary Heap & Priority Queue", desc: "Min/Max Heap, 2i+1 Array Mapping, Sift-Up/Down" },
   { id: "hashtable", title: "Hash Table & Collisions", desc: "Separate Chaining, Linear Probing, Rehashing" },
+  { id: "trie", title: "Trie (Prefix Tree)", desc: "Prefix Compression, Word Search, Autocomplete" },
   { id: "linkedlist", title: "Singly & Doubly Linked List", desc: "Pointers, In-Place Reversal, O(1) Head" },
   { id: "stackqueue", title: "Stack & Queue (LIFO/FIFO)", desc: "Push, Pop, Enqueue, Dequeue Buffers" },
   { id: "bst", title: "Binary Search Tree (BST)", desc: "3D Nodes, Insert, Search, Delete" },
@@ -28,7 +33,8 @@ const DATA_STRUCTURE_TOPICS = [
 ];
 
 const UNRELEASED_STRUCTURES = [
-  { id: "trie", title: "Trie (Prefix Tree)" },
+  { id: "avltree", title: "AVL & Red-Black Balanced Tree" },
+  { id: "disjointset", title: "Disjoint Set (Union-Find)" },
 ];
 
 // Miniature SVG Progress Ring
@@ -65,6 +71,7 @@ export default function TopicNav() {
     topicProgress,
     setShowInlineQuiz,
     showInlineQuiz,
+    openCheatSheet,
   } = useVisualizerStore();
 
   const [sortingOpen, setSortingOpen] = useState(true);
@@ -181,21 +188,35 @@ export default function TopicNav() {
         </div>
       </div>
 
-      {/* Normal, Non-Clipping Footer Row for Topic Mastery Quiz */}
-      <div className="shrink-0 p-2.5 border-t border-[var(--border-color)] bg-[var(--bg-raised)] flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <HelpCircle className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-          <span className="text-xs text-[var(--text-primary)] font-medium truncate">
-            Topic Quiz
-          </span>
-        </div>
-
+      {/* Footer Rows: DSA Matrix Cheat Sheet & Topic Quiz */}
+      <div className="shrink-0 p-2.5 border-t border-[var(--border-color)] bg-[var(--bg-raised)] flex flex-col gap-2">
         <button
-          onClick={() => setShowInlineQuiz(!showInlineQuiz)}
-          className="px-2.5 py-1 rounded bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)] text-xs font-semibold text-[var(--text-primary)] transition-colors shrink-0"
+          onClick={openCheatSheet}
+          className="w-full px-2.5 py-1.5 rounded bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)] text-xs font-semibold text-[var(--text-primary)] flex items-center justify-between transition-colors shadow-2xs"
+          title="Open DSA Complexity Matrix & Interview Cheat Sheet"
         >
-          {showInlineQuiz ? "Close" : "Open Quiz"}
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <span>DSA Cheat Sheet</span>
+          </div>
+          <span className="text-[10px] text-[var(--accent)] font-mono font-bold">15 Topics</span>
         </button>
+
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-[var(--border-color)]/60">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <HelpCircle className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+            <span className="text-xs text-[var(--text-primary)] font-medium truncate">
+              Topic Quiz
+            </span>
+          </div>
+
+          <button
+            onClick={() => setShowInlineQuiz(!showInlineQuiz)}
+            className="px-2.5 py-1 rounded bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)] text-xs font-semibold text-[var(--text-primary)] transition-colors shrink-0"
+          >
+            {showInlineQuiz ? "Close" : "Open Quiz"}
+          </button>
+        </div>
       </div>
     </aside>
   );

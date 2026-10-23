@@ -599,3 +599,143 @@ export function generateDijkstraTrace(
   return steps;
 }
 
+// ==========================================
+// 4. INTERACTIVE GRAPH SANDBOX UTILITIES
+// ==========================================
+
+export function layoutGraphNodes(nodeIds: string[]): GraphNode3D[] {
+  const n = nodeIds.length;
+  if (n === 0) return [];
+  const radius = n <= 3 ? 2.2 : n <= 6 ? 2.8 : 3.4;
+
+  return nodeIds.map((id, i) => {
+    const angle = (2 * Math.PI * i) / n;
+    const x = Number((radius * Math.cos(angle)).toFixed(2));
+    const y = Number((radius * Math.sin(angle)).toFixed(2));
+    const z = Number((0.6 * Math.sin(2 * angle)).toFixed(2));
+    return {
+      id,
+      label: id,
+      x,
+      y,
+      z,
+      state: "unvisited" as const,
+      dist: Infinity,
+    };
+  });
+}
+
+export function createGraphEdge(
+  fromId: string,
+  toId: string,
+  weight: number,
+  nodes: GraphNode3D[],
+  directed: boolean = false
+): GraphEdge3D | null {
+  if (fromId === toId) return null;
+  const u = nodes.find((n) => n.id === fromId);
+  const v = nodes.find((n) => n.id === toId);
+  if (!u || !v) return null;
+
+  return {
+    id: `${fromId}-${toId}`,
+    from: fromId,
+    to: toId,
+    fromPos: [u.x, u.y, u.z],
+    toPos: [v.x, v.y, v.z],
+    weight: Math.max(1, Math.round(weight)),
+    state: "default",
+    directed,
+  };
+}
+
+export function recalculateEdgePositions(nodes: GraphNode3D[], edges: GraphEdge3D[]): GraphEdge3D[] {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  return edges
+    .filter((e) => nodeMap.has(e.from) && nodeMap.has(e.to))
+    .map((e) => {
+      const u = nodeMap.get(e.from)!;
+      const v = nodeMap.get(e.to)!;
+      return {
+        ...e,
+        fromPos: [u.x, u.y, u.z],
+        toPos: [v.x, v.y, v.z],
+      };
+    });
+}
+
+export const GRAPH_SANDBOX_TEMPLATES: Record<
+  string,
+  { name: string; description: string; getModel: () => GraphModel }
+> = {
+  triangle: {
+    name: "Triangle (3 Nodes)",
+    description: "Cycle of 3 nodes with varying edge weights",
+    getModel: () => {
+      const nodeIds = ["A", "B", "C"];
+      const nodes = layoutGraphNodes(nodeIds);
+      const edges = [
+        createGraphEdge("A", "B", 3, nodes)!,
+        createGraphEdge("B", "C", 4, nodes)!,
+        createGraphEdge("A", "C", 6, nodes)!,
+      ];
+      return { nodes, edges };
+    },
+  },
+  star: {
+    name: "Star Hub (5 Nodes)",
+    description: "Central node A radiating out to peripheral nodes B, C, D, E",
+    getModel: () => {
+      const peripheral = ["B", "C", "D", "E"];
+      const outerNodes = layoutGraphNodes(peripheral);
+      const hubNode: GraphNode3D = {
+        id: "A",
+        label: "A",
+        x: 0,
+        y: 0,
+        z: 0.2,
+        state: "unvisited",
+        dist: Infinity,
+      };
+      const nodes = [hubNode, ...outerNodes];
+      const edges = [
+        createGraphEdge("A", "B", 2, nodes)!,
+        createGraphEdge("A", "C", 4, nodes)!,
+        createGraphEdge("A", "D", 5, nodes)!,
+        createGraphEdge("A", "E", 7, nodes)!,
+        createGraphEdge("B", "C", 3, nodes)!,
+      ];
+      return { nodes, edges };
+    },
+  },
+  bipartite: {
+    name: "Bipartite (4 Nodes)",
+    description: "Complete 2x2 bipartite graph partitioned into two sets",
+    getModel: () => {
+      const nodes: GraphNode3D[] = [
+        { id: "A", label: "A", x: -2.2, y: 1.5, z: 0, state: "unvisited", dist: Infinity },
+        { id: "B", label: "B", x: -2.2, y: -1.5, z: 0, state: "unvisited", dist: Infinity },
+        { id: "C", label: "C", x: 2.2, y: 1.5, z: 0, state: "unvisited", dist: Infinity },
+        { id: "D", label: "D", x: 2.2, y: -1.5, z: 0, state: "unvisited", dist: Infinity },
+      ];
+      const edges = [
+        createGraphEdge("A", "C", 2, nodes)!,
+        createGraphEdge("A", "D", 5, nodes)!,
+        createGraphEdge("B", "C", 4, nodes)!,
+        createGraphEdge("B", "D", 3, nodes)!,
+      ];
+      return { nodes, edges };
+    },
+  },
+  blank: {
+    name: "2-Node Starter",
+    description: "Minimal 2-node starting canvas ready for custom expansion",
+    getModel: () => {
+      const nodeIds = ["A", "B"];
+      const nodes = layoutGraphNodes(nodeIds);
+      const edges = [createGraphEdge("A", "B", 2, nodes)!];
+      return { nodes, edges };
+    },
+  },
+};
+

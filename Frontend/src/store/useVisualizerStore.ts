@@ -15,6 +15,7 @@ import {
   HeapType,
   HashTableTraceStep,
   HashCollisionStrategy,
+  TrieTraceStep,
 } from "@/types/visualizer";
 import { ALGORITHMS, createArrayFromPreset, getAlgorithmTrace } from "@/lib/algorithms";
 import {
@@ -27,6 +28,11 @@ import {
 } from "@/lib/bstEngine";
 import {
   GRAPH_PRESETS,
+  GraphModel,
+  GRAPH_SANDBOX_TEMPLATES,
+  layoutGraphNodes,
+  createGraphEdge,
+  recalculateEdgePositions,
   generateBfsTrace,
   generateDfsTrace,
   generateDijkstraTrace,
@@ -70,6 +76,14 @@ import {
   generateRehashTrace,
   countKeys as countHashKeys,
 } from "@/lib/hashTableEngine";
+import {
+  buildTrieFromWords,
+  generateTrieInsertTrace,
+  generateTrieSearchTrace,
+  generateTrieStartsWithTrace,
+  generateTrieAutocompleteTrace,
+  generateTrieDeleteTrace,
+} from "@/lib/trieEngine";
 import { ThemeMode } from "@/styles/tokens";
 
 interface PredictState {
@@ -164,6 +178,16 @@ interface VisualizerStore {
   graphStartNode: string;
   graphTargetNode: string;
   graphPresetId: string;
+  customGraph: GraphModel | null;
+  isGraphSandboxOpen: boolean;
+  toggleGraphSandbox: () => void;
+  getActiveGraphModel: () => GraphModel;
+  addCustomGraphNode: () => void;
+  removeCustomGraphNode: (id: string) => void;
+  addCustomGraphEdge: (from: string, to: string, weight: number, bidirectional?: boolean) => void;
+  removeCustomGraphEdge: (edgeId: string) => void;
+  loadCustomGraphTemplate: (templateKey: string) => void;
+  clearCustomGraph: () => void;
   setGraphAlgorithm: (algo: GraphAlgorithmType) => void;
   setGraphStartNode: (id: string) => void;
   setGraphTargetNode: (id: string) => void;
@@ -172,6 +196,11 @@ interface VisualizerStore {
   seekGraphStep: (index: number) => void;
   stepForwardGraph: () => void;
   stepBackwardGraph: () => void;
+
+  // Cheat Sheet / Comparison Matrix Modal
+  isCheatSheetOpen: boolean;
+  openCheatSheet: () => void;
+  closeCheatSheet: () => void;
 
   // Linked List State & Actions
   linkedListSteps: LinkedListTraceStep[];
@@ -245,6 +274,19 @@ interface VisualizerStore {
   stepForwardHashTable: () => void;
   stepBackwardHashTable: () => void;
 
+  // Trie (Prefix Tree) State & Actions
+  trieSteps: TrieTraceStep[];
+  currentTrieStepIndex: number;
+  insertIntoTrie: (word: string) => void;
+  searchInTrie: (word: string) => void;
+  startsWithTrie: (prefix: string) => void;
+  autocompleteTrie: (prefix: string) => void;
+  deleteFromTrie: (word: string) => void;
+  resetTriePreset: (words?: string[]) => void;
+  seekTrieStep: (index: number) => void;
+  stepForwardTrie: () => void;
+  stepBackwardTrie: () => void;
+
   // Backend C++ Status
   isBackendOnline: boolean;
   useBackend: boolean;
@@ -273,7 +315,7 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   selectedTopic: "bubble",
   setTopic: (topicId) => {
     const arr = get().array;
-    const isSorting = ["bubble", "selection", "insertion", "quick"].includes(topicId);
+    const isSorting = ALGORITHMS[topicId]?.category === "Sorting";
     const nextSteps = isSorting ? getAlgorithmTrace(topicId, arr) : get().steps;
     const compareAlgo = get().compareAlgoId;
     const compareNextSteps = isSorting ? getAlgorithmTrace(compareAlgo, arr) : get().compareSteps;
@@ -290,6 +332,7 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
       currentDynamicArrayStepIndex: 0,
       currentHeapStepIndex: 0,
       currentHashTableStepIndex: 0,
+      currentTrieStepIndex: 0,
       isPlaying: false,
       showInlineQuiz: false,
     });
@@ -597,6 +640,11 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
     set((s) => ({ currentTreeStepIndex: Math.max(0, s.currentTreeStepIndex - 1) }));
   },
 
+  // Cheat Sheet / Comparison Matrix Modal
+  isCheatSheetOpen: false,
+  openCheatSheet: () => set({ isCheatSheetOpen: true }),
+  closeCheatSheet: () => set({ isCheatSheetOpen: false }),
+
   // 3D Graph State & Actions
   graphSteps: (() => {
     const { nodes, edges } = GRAPH_PRESETS.classic.model();
@@ -607,11 +655,122 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
   graphStartNode: "A",
   graphTargetNode: "F",
   graphPresetId: "classic",
+  customGraph: null,
+  isGraphSandboxOpen: false,
+  toggleGraphSandbox: () => set((s) => ({ isGraphSandboxOpen: !s.isGraphSandboxOpen })),
+
+  getActiveGraphModel: () => {
+    const { graphPresetId, customGraph } = get();
+    if (graphPresetId === "custom" && customGraph) {
+      return customGraph;
+    }
+    const preset = GRAPH_PRESETS[graphPresetId] || GRAPH_PRESETS.classic;
+    return preset.model();
+  },
+
+  addCustomGraphNode: () => {
+    const active = get().getActiveGraphModel();
+    const existingIds = active.nodes.map((n) => n.id);
+    const alphabet = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+    const nextId = alphabet.find((ch) => !existingIds.includes(ch));
+    if (!nextId) return; // Limit to 10 nodes for clean 3D visibility
+
+    const updatedIds = [...existingIds, nextId];
+    const newNodes = layoutGraphNodes(updatedIds);
+    const updatedEdges = recalculateEdgePositions(newNodes, active.edges);
+
+    // If there's an existing node, connect the new node with an initial edge
+    if (existingIds.length > 0) {
+      const connectTo = existingIds[existingIds.length - 1];
+      const newEdge = createGraphEdge(connectTo, nextId, 3, newNodes, false);
+      if (newEdge) updatedEdges.push(newEdge);
+    }
+
+    const newModel = { nodes: newNodes, edges: updatedEdges };
+    set({ customGraph: newModel, graphPresetId: "custom" });
+    get().runGraphAlgorithm(get().graphAlgorithm, get().graphStartNode, get().graphTargetNode);
+  },
+
+  removeCustomGraphNode: (nodeId: string) => {
+    const active = get().getActiveGraphModel();
+    if (active.nodes.length <= 2) return; // Minimum 2 nodes
+
+    const remainingIds = active.nodes.map((n) => n.id).filter((id) => id !== nodeId);
+    const newNodes = layoutGraphNodes(remainingIds);
+    const filteredEdges = active.edges.filter((e) => e.from !== nodeId && e.to !== nodeId);
+    const updatedEdges = recalculateEdgePositions(newNodes, filteredEdges);
+
+    const newModel = { nodes: newNodes, edges: updatedEdges };
+    const nextStart = get().graphStartNode === nodeId ? remainingIds[0] : get().graphStartNode;
+    const nextTarget =
+      get().graphTargetNode === nodeId ? remainingIds[remainingIds.length - 1] : get().graphTargetNode;
+
+    set({
+      customGraph: newModel,
+      graphPresetId: "custom",
+      graphStartNode: nextStart,
+      graphTargetNode: nextTarget,
+    });
+    get().runGraphAlgorithm(get().graphAlgorithm, nextStart, nextTarget);
+  },
+
+  addCustomGraphEdge: (from: string, to: string, weight: number, bidirectional: boolean = true) => {
+    if (from === to) return;
+    const active = get().getActiveGraphModel();
+    const existing = active.edges.find(
+      (e) => (e.from === from && e.to === to) || (!e.directed && e.from === to && e.to === from)
+    );
+    if (existing) {
+      const updatedEdges = active.edges.map((e) => (e.id === existing.id ? { ...e, weight } : e));
+      const newModel = { ...active, edges: updatedEdges };
+      set({ customGraph: newModel, graphPresetId: "custom" });
+      get().runGraphAlgorithm();
+      return;
+    }
+
+    const newEdge = createGraphEdge(from, to, weight, active.nodes, !bidirectional);
+    if (!newEdge) return;
+
+    const newModel = { ...active, edges: [...active.edges, newEdge] };
+    set({ customGraph: newModel, graphPresetId: "custom" });
+    get().runGraphAlgorithm();
+  },
+
+  removeCustomGraphEdge: (edgeId: string) => {
+    const active = get().getActiveGraphModel();
+    const newModel = { ...active, edges: active.edges.filter((e) => e.id !== edgeId) };
+    set({ customGraph: newModel, graphPresetId: "custom" });
+    get().runGraphAlgorithm();
+  },
+
+  loadCustomGraphTemplate: (templateKey: string) => {
+    const template = GRAPH_SANDBOX_TEMPLATES[templateKey] || GRAPH_SANDBOX_TEMPLATES.triangle;
+    const model = template.getModel();
+    const start = model.nodes[0]?.id || "A";
+    const target = model.nodes[model.nodes.length - 1]?.id || "C";
+    set({
+      customGraph: model,
+      graphPresetId: "custom",
+      graphStartNode: start,
+      graphTargetNode: target,
+    });
+    get().runGraphAlgorithm(get().graphAlgorithm, start, target);
+  },
+
+  clearCustomGraph: () => {
+    const model = GRAPH_SANDBOX_TEMPLATES.blank.getModel();
+    set({
+      customGraph: model,
+      graphPresetId: "custom",
+      graphStartNode: "A",
+      graphTargetNode: "B",
+    });
+    get().runGraphAlgorithm(get().graphAlgorithm, "A", "B");
+  },
 
   setGraphAlgorithm: (algo) => {
-    const { graphStartNode, graphTargetNode, graphPresetId } = get();
-    const preset = GRAPH_PRESETS[graphPresetId] || GRAPH_PRESETS.classic;
-    const { nodes, edges } = preset.model();
+    const { graphStartNode, graphTargetNode } = get();
+    const { nodes, edges } = get().getActiveGraphModel();
 
     let steps: GraphTraceStep[] = [];
     if (algo === "bfs") {
@@ -644,24 +803,28 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
 
   runGraphAlgorithm: (algo, startId, targetId) => {
     const selectedAlgo = algo || get().graphAlgorithm;
-    const start = startId || get().graphStartNode;
-    const target = targetId || get().graphTargetNode;
-    const preset = GRAPH_PRESETS[get().graphPresetId] || GRAPH_PRESETS.classic;
-    const { nodes, edges } = preset.model();
+    const { nodes, edges } = get().getActiveGraphModel();
+    const nodeIds = nodes.map((n) => n.id);
+    const validStart = nodeIds.includes(startId || get().graphStartNode)
+      ? startId || get().graphStartNode
+      : nodeIds[0] || "A";
+    const validTarget = nodeIds.includes(targetId || get().graphTargetNode)
+      ? targetId || get().graphTargetNode
+      : nodeIds[nodeIds.length - 1] || "B";
 
     let steps: GraphTraceStep[] = [];
     if (selectedAlgo === "bfs") {
-      steps = generateBfsTrace(nodes, edges, start);
+      steps = generateBfsTrace(nodes, edges, validStart);
     } else if (selectedAlgo === "dfs") {
-      steps = generateDfsTrace(nodes, edges, start);
+      steps = generateDfsTrace(nodes, edges, validStart);
     } else {
-      steps = generateDijkstraTrace(nodes, edges, start, target);
+      steps = generateDijkstraTrace(nodes, edges, validStart, validTarget);
     }
 
     set({
       graphAlgorithm: selectedAlgo,
-      graphStartNode: start,
-      graphTargetNode: target,
+      graphStartNode: validStart,
+      graphTargetNode: validTarget,
       graphSteps: steps,
       currentGraphStepIndex: 0,
       isPlaying: false,
@@ -686,6 +849,7 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
 
     set({
       graphPresetId: presetId,
+      customGraph: null,
       graphStartNode: start,
       graphTargetNode: target,
       graphSteps: steps,
@@ -1449,6 +1613,123 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
 
   stepBackwardHashTable: () => {
     set((s) => ({ currentHashTableStepIndex: Math.max(0, s.currentHashTableStepIndex - 1) }));
+  },
+
+  // Trie (Prefix Tree) State & Actions
+  trieSteps: (() => {
+    const initialWords = ["cat", "car", "cart", "dog", "dot"];
+    const { nodes, wordList } = buildTrieFromWords(initialWords);
+    return [
+      {
+        stepIndex: 0,
+        operation: "init" as const,
+        nodes,
+        wordList,
+        description: `Trie initialized with ${wordList.length} words: [${wordList.join(", ")}].`,
+        reasoning: "Trie compactly merges shared prefixes. Root holds starting branches.",
+        codeLine: 1,
+        inlineVariables: { wordCount: wordList.length, totalNodes: Object.keys(nodes).length },
+      },
+    ];
+  })(),
+  currentTrieStepIndex: 0,
+
+  insertIntoTrie: (word) => {
+    const lastStep = get().trieSteps[get().trieSteps.length - 1];
+    const currentNodes = lastStep?.nodes || buildTrieFromWords([]).nodes;
+    const words = lastStep?.wordList || [];
+    const steps = generateTrieInsertTrace(currentNodes, words, word);
+    set({
+      trieSteps: steps,
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  searchInTrie: (word) => {
+    const lastStep = get().trieSteps[get().trieSteps.length - 1];
+    const currentNodes = lastStep?.nodes || buildTrieFromWords([]).nodes;
+    const words = lastStep?.wordList || [];
+    const steps = generateTrieSearchTrace(currentNodes, words, word);
+    set({
+      trieSteps: steps,
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  startsWithTrie: (prefix) => {
+    const lastStep = get().trieSteps[get().trieSteps.length - 1];
+    const currentNodes = lastStep?.nodes || buildTrieFromWords([]).nodes;
+    const words = lastStep?.wordList || [];
+    const steps = generateTrieStartsWithTrace(currentNodes, words, prefix);
+    set({
+      trieSteps: steps,
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  autocompleteTrie: (prefix) => {
+    const lastStep = get().trieSteps[get().trieSteps.length - 1];
+    const currentNodes = lastStep?.nodes || buildTrieFromWords([]).nodes;
+    const words = lastStep?.wordList || [];
+    const steps = generateTrieAutocompleteTrace(currentNodes, words, prefix);
+    set({
+      trieSteps: steps,
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  deleteFromTrie: (word) => {
+    const lastStep = get().trieSteps[get().trieSteps.length - 1];
+    const currentNodes = lastStep?.nodes || buildTrieFromWords([]).nodes;
+    const words = lastStep?.wordList || [];
+    const steps = generateTrieDeleteTrace(currentNodes, words, word);
+    set({
+      trieSteps: steps,
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  resetTriePreset: (words = ["cat", "car", "cart", "dog", "dot"]) => {
+    const { nodes, wordList } = buildTrieFromWords(words);
+    set({
+      trieSteps: [
+        {
+          stepIndex: 0,
+          operation: "init",
+          nodes,
+          wordList,
+          description: `Loaded Trie preset with ${wordList.length} words: [${wordList.join(", ")}].`,
+          reasoning: "Trie rebuilt with preset vocabulary. Common prefixes shared across branches.",
+          codeLine: 1,
+          inlineVariables: { wordCount: wordList.length, totalNodes: Object.keys(nodes).length },
+        },
+      ],
+      currentTrieStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  seekTrieStep: (index) => {
+    const total = get().trieSteps.length;
+    set({ currentTrieStepIndex: Math.max(0, Math.min(index, total - 1)), isPlaying: false });
+  },
+
+  stepForwardTrie: () => {
+    const { currentTrieStepIndex, trieSteps } = get();
+    if (currentTrieStepIndex < trieSteps.length - 1) {
+      set({ currentTrieStepIndex: currentTrieStepIndex + 1 });
+    } else {
+      set({ isPlaying: false });
+    }
+  },
+
+  stepBackwardTrie: () => {
+    set((s) => ({ currentTrieStepIndex: Math.max(0, s.currentTrieStepIndex - 1) }));
   },
 
   // Backend C++ Status

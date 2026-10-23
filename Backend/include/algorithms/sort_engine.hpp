@@ -287,6 +287,116 @@ public:
         return steps;
     }
 
+    static std::vector<TraceStep> mergeSort(std::vector<int> arr) {
+        std::vector<TraceStep> steps;
+        steps.push_back({0, "init", {}, arr, "Initial unsorted array", 2});
+        if (!arr.empty()) {
+            mergeSortHelper(arr, 0, static_cast<int>(arr.size()) - 1, steps);
+        }
+        std::vector<int> allIndices(arr.size());
+        for (size_t k = 0; k < arr.size(); ++k) allIndices[k] = static_cast<int>(k);
+        steps.push_back({
+            static_cast<int>(steps.size()),
+            "sorted",
+            allIndices,
+            arr,
+            "Array is fully sorted via Merge Sort",
+            30
+        });
+        return steps;
+    }
+
+    static std::vector<TraceStep> heapSort(std::vector<int> arr) {
+        std::vector<TraceStep> steps;
+        int n = static_cast<int>(arr.size());
+        steps.push_back({0, "init", {}, arr, "Initial unsorted array", 2});
+        if (n <= 1) {
+            std::vector<int> allIndices(n);
+            for (int k = 0; k < n; ++k) allIndices[k] = k;
+            steps.push_back({static_cast<int>(steps.size()), "sorted", allIndices, arr, "Array is sorted", 28});
+            return steps;
+        }
+
+        // Phase 1: Build max heap
+        for (int i = n / 2 - 1; i >= 0; --i) {
+            heapify(arr, n, i, steps);
+        }
+
+        // Phase 2: One by one extract elements
+        std::vector<int> sortedIndices;
+        for (int i = n - 1; i > 0; --i) {
+            std::swap(arr[0], arr[i]);
+            std::ostringstream swapDesc;
+            swapDesc << "Swapped root max " << arr[i] << " with boundary element at index " << i;
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "swap",
+                {0, i},
+                arr,
+                swapDesc.str(),
+                18
+            });
+
+            sortedIndices.push_back(i);
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "sorted",
+                sortedIndices,
+                arr,
+                "Element locked in final sorted position",
+                20
+            });
+
+            heapify(arr, i, 0, steps);
+        }
+
+        sortedIndices.push_back(0);
+        steps.push_back({
+            static_cast<int>(steps.size()),
+            "sorted",
+            sortedIndices,
+            arr,
+            "Array is completely sorted via Heap Sort!",
+            28
+        });
+
+        return steps;
+    }
+
+    static std::vector<TraceStep> radixSort(std::vector<int> arr) {
+        std::vector<TraceStep> steps;
+        int n = static_cast<int>(arr.size());
+        steps.push_back({0, "init", {}, arr, "Initial unsorted array", 2});
+        if (n <= 1) {
+            std::vector<int> allIndices(n);
+            for (int k = 0; k < n; ++k) allIndices[k] = k;
+            steps.push_back({static_cast<int>(steps.size()), "sorted", allIndices, arr, "Array is sorted", 28});
+            return steps;
+        }
+
+        int maxVal = arr[0];
+        for (int i = 1; i < n; ++i) {
+            if (arr[i] > maxVal) maxVal = arr[i];
+        }
+
+        for (int exp = 1; maxVal / exp > 0; exp *= 10) {
+            radixCountSort(arr, n, exp, steps);
+        }
+
+        std::vector<int> allIndices(n);
+        for (int k = 0; k < n; ++k) allIndices[k] = k;
+        steps.push_back({
+            static_cast<int>(steps.size()),
+            "sorted",
+            allIndices,
+            arr,
+            "Array is completely sorted via LSD Radix Sort!",
+            28
+        });
+
+        return steps;
+    }
+
 private:
     static int partition(std::vector<int>& arr, int low, int high, std::vector<TraceStep>& steps) {
         int pivot = arr[high];
@@ -370,6 +480,184 @@ private:
                 arr,
                 "Single element sub-array is sorted",
                 16
+            });
+        }
+    }
+
+    static void merge(std::vector<int>& arr, int left, int mid, int right, std::vector<TraceStep>& steps) {
+        int n1 = mid - left + 1;
+        int n2 = right - mid;
+        std::vector<int> L(n1), R(n2);
+        for (int i = 0; i < n1; ++i) L[i] = arr[left + i];
+        for (int j = 0; j < n2; ++j) R[j] = arr[mid + 1 + j];
+
+        int i = 0, j = 0, k = left;
+        while (i < n1 && j < n2) {
+            std::ostringstream compDesc;
+            compDesc << "Comparing left[" << (left + i) << "]=" << L[i]
+                     << " vs right[" << (mid + 1 + j) << "]=" << R[j];
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "compare",
+                {left + i, mid + 1 + j},
+                arr,
+                compDesc.str(),
+                14
+            });
+
+            if (L[i] <= R[j]) {
+                arr[k] = L[i];
+                i++;
+            } else {
+                arr[k] = R[j];
+                j++;
+            }
+
+            std::ostringstream placeDesc;
+            placeDesc << "Copied " << arr[k] << " into merged array at index " << k;
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "overwrite",
+                {k},
+                arr,
+                placeDesc.str(),
+                18
+            });
+            k++;
+        }
+
+        while (i < n1) {
+            arr[k] = L[i];
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "overwrite",
+                {k},
+                arr,
+                "Copied remaining left element",
+                22
+            });
+            i++;
+            k++;
+        }
+
+        while (j < n2) {
+            arr[k] = R[j];
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "overwrite",
+                {k},
+                arr,
+                "Copied remaining right element",
+                25
+            });
+            j++;
+            k++;
+        }
+    }
+
+    static void mergeSortHelper(std::vector<int>& arr, int left, int right, std::vector<TraceStep>& steps) {
+        if (left < right) {
+            int mid = left + (right - left) / 2;
+            mergeSortHelper(arr, left, mid, steps);
+            mergeSortHelper(arr, mid + 1, right, steps);
+            merge(arr, left, mid, right, steps);
+        }
+    }
+
+    static void heapify(std::vector<int>& arr, int n, int i, std::vector<TraceStep>& steps) {
+        int largest = i;
+        int left = 2 * i + 1;
+        int right = 2 * i + 2;
+
+        if (left < n) {
+            std::ostringstream compDesc;
+            compDesc << "Comparing root arr[" << largest << "]=" << arr[largest] << " with left child arr[" << left << "]=" << arr[left];
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "compare",
+                {largest, left},
+                arr,
+                compDesc.str(),
+                6
+            });
+            if (arr[left] > arr[largest]) {
+                largest = left;
+            }
+        }
+
+        if (right < n) {
+            std::ostringstream compDesc;
+            compDesc << "Comparing current largest arr[" << largest << "]=" << arr[largest] << " with right child arr[" << right << "]=" << arr[right];
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "compare",
+                {largest, right},
+                arr,
+                compDesc.str(),
+                9
+            });
+            if (arr[right] > arr[largest]) {
+                largest = right;
+            }
+        }
+
+        if (largest != i) {
+            std::swap(arr[i], arr[largest]);
+            std::ostringstream swapDesc;
+            swapDesc << "Swapped arr[" << i << "] with larger child arr[" << largest << "]";
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "swap",
+                {i, largest},
+                arr,
+                swapDesc.str(),
+                12
+            });
+
+            heapify(arr, n, largest, steps);
+        }
+    }
+
+    static void radixCountSort(std::vector<int>& arr, int n, int exp, std::vector<TraceStep>& steps) {
+        std::vector<int> output(n);
+        int count[10] = {0};
+
+        for (int i = 0; i < n; ++i) {
+            int digit = (arr[i] / exp) % 10;
+            count[digit]++;
+            std::ostringstream desc;
+            desc << "Inspecting digit of arr[" << i << "]=" << arr[i] << " at place " << exp << ": digit=" << digit;
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "compare",
+                {i},
+                arr,
+                desc.str(),
+                8
+            });
+        }
+
+        for (int i = 1; i < 10; ++i) {
+            count[i] += count[i - 1];
+        }
+
+        for (int i = n - 1; i >= 0; --i) {
+            int digit = (arr[i] / exp) % 10;
+            output[count[digit] - 1] = arr[i];
+            count[digit]--;
+        }
+
+        for (int i = 0; i < n; ++i) {
+            arr[i] = output[i];
+            std::ostringstream desc;
+            desc << "Placed " << arr[i] << " at index " << i << " sorted by digit place " << exp;
+            steps.push_back({
+                static_cast<int>(steps.size()),
+                "overwrite",
+                {i},
+                arr,
+                desc.str(),
+                18
             });
         }
     }

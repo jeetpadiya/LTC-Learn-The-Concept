@@ -272,6 +272,41 @@ export interface HashTableTraceStep {
   inlineVariables: Record<string, string | number>;
 }
 
+// ==========================================
+// TRIE (PREFIX TREE) TYPES
+// ==========================================
+export type TrieNodeState = "default" | "active" | "comparing" | "inserted" | "found" | "not_found";
+
+export interface TrieNodeVisual {
+  id: string;
+  char: string;
+  isEndOfWord: boolean;
+  word?: string;
+  parentId: string | null;
+  childIds: string[];
+  childrenChars: string[];
+  x: number;
+  y: number;
+  level: number;
+  state: TrieNodeState;
+}
+
+export interface TrieTraceStep {
+  stepIndex: number;
+  operation: "init" | "insert" | "search" | "startsWith" | "autocomplete" | "delete";
+  nodes: Record<string, TrieNodeVisual>;
+  wordList: string[];
+  activeNodeId?: string;
+  activeChar?: string;
+  charIndex?: number;
+  targetWord?: string;
+  suggestions?: string[];
+  description: string;
+  reasoning: string;
+  codeLine: number;
+  inlineVariables: Record<string, string | number>;
+}
+
 export interface QuizQuestion {
   id: string;
   question: string;

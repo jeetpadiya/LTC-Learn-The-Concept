@@ -55,7 +55,7 @@ export default function CompareVisualizer() {
             className="px-2 py-0.5 rounded bg-[var(--bg-raised)] border border-[var(--border-color)] text-[var(--text-primary)] font-medium text-xs cursor-pointer outline-none"
           >
             {Object.values(ALGORITHMS)
-              .filter((a) => a.id !== selectedTopic)
+              .filter((a) => a.category === "Sorting" && a.id !== selectedTopic)
               .map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}

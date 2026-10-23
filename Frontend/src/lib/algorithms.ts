@@ -222,6 +222,220 @@ void quickSort(std::vector<int>& arr, int low, int high) {
       },
     ],
   },
+  merge: {
+    id: "merge",
+    name: "Merge Sort",
+    category: "Sorting",
+    summary:
+      "Divide-and-conquer algorithm that recursively splits the array into single-element subarrays, then merges pairs of sorted subarrays using an auxiliary buffer. Guarantees O(n log n) in all cases and preserves stability.",
+    timeComplexity: {
+      best: "O(n log n)",
+      average: "O(n log n)",
+      worst: "O(n log n)",
+    },
+    spaceComplexity: "O(n)",
+    stable: true,
+    inPlace: false,
+    keyInvariants: [
+      "Divide and Conquer: Subarrays [L..M] and [M+1..R] are recursively sorted before the merge phase begins.",
+      "Two-Pointer Auxiliary Merge: Comparing elements from both sorted halves and picking the smaller element preserves original relative order (stability).",
+      "Guaranteed O(n log n): Tree recursion depth is strictly ⌈log₂ n⌉ levels, each processing n total elements.",
+    ],
+    cppCode: `void merge(std::vector<int>& arr, int left, int mid, int right) {
+    int n1 = mid - left + 1, n2 = right - mid;
+    std::vector<int> L(n1), R(n2);
+    for (int i = 0; i < n1; ++i) L[i] = arr[left + i];
+    for (int j = 0; j < n2; ++j) R[j] = arr[mid + 1 + j];
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k++] = L[i++];
+        } else {
+            arr[k++] = R[j++];
+        }
+    }
+    while (i < n1) arr[k++] = L[i++];
+    while (j < n2) arr[k++] = R[j++];
+}
+
+void mergeSort(std::vector<int>& arr, int left, int right) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+}`,
+    quiz: [
+      {
+        id: "m1",
+        question: "Why is Merge Sort preferred over Quick Sort for sorting linked lists?",
+        options: [
+          "Merge Sort does not require random access (no pointer arithmetic) and can merge linked list nodes in-place without auxiliary array allocation.",
+          "Quick Sort is mathematically impossible on linked lists.",
+          "Linked lists have O(1) random access.",
+          "Merge Sort runs in O(log n) time on linked lists.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "Because linked list nodes can be spliced and rewired by changing pointers, Merge Sort operates in-place without the O(n) array copy overhead, and avoids the need for random indexing.",
+      },
+      {
+        id: "m2",
+        question: "What gives Merge Sort a guaranteed O(n log n) time complexity even in the worst case?",
+        options: [
+          "The array is always split exactly in half, guaranteeing a recursion tree depth of ⌈log₂ n⌉ with O(n) work per level.",
+          "It uses a CPU hardware accelerator.",
+          "It skips duplicate elements.",
+          "Because it sorts two elements simultaneously.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "Unlike Quick Sort where bad pivot choice can create unbalanced partitions of size 1 and n-1, Merge Sort unconditionally divides at mid = (left + right) / 2, ensuring exactly log₂ n levels of n work each.",
+      },
+    ],
+  },
+  heapsort: {
+    id: "heapsort",
+    name: "Heap Sort",
+    category: "Sorting",
+    summary:
+      "Comparison-based sorting algorithm using a binary max-heap. It first builds a max-heap in O(n) time, then repeatedly extracts the root maximum element to the end of the unsorted boundary, maintaining the heap with O(log n) sift-downs.",
+    timeComplexity: {
+      best: "O(n log n)",
+      average: "O(n log n)",
+      worst: "O(n log n)",
+    },
+    spaceComplexity: "O(1)",
+    stable: false,
+    inPlace: true,
+    keyInvariants: [
+      "Max-Heap Invariant: Every parent node at index i satisfies arr[i] >= arr[2i+1] and arr[i] >= arr[2i+2] within the active heap boundary [0..heapSize-1].",
+      "Linear-Time Build: Floyd's bottom-up heapify runs in strictly O(n) time by sifting down from ⌊n/2⌋ - 1 down to 0.",
+      "Sorted Suffix: After extracting k elements, the suffix [n-k..n-1] is permanently sorted and never modified.",
+    ],
+    cppCode: `void heapify(std::vector<int>& arr, int n, int i) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+    if (left < n && arr[left] > arr[largest])
+        largest = left;
+    if (right < n && arr[right] > arr[largest])
+        largest = right;
+    if (largest != i) {
+        std::swap(arr[i], arr[largest]);
+        heapify(arr, n, largest);
+    }
+}
+
+void heapSort(std::vector<int>& arr) {
+    int n = arr.size();
+    for (int i = n / 2 - 1; i >= 0; --i)
+        heapify(arr, n, i);
+    for (int i = n - 1; i > 0; --i) {
+        std::swap(arr[0], arr[i]);
+        heapify(arr, i, 0);
+    }
+}`,
+    quiz: [
+      {
+        id: "hs1",
+        question: "Why does building a binary max-heap take O(n) time rather than O(n log n)?",
+        options: [
+          "Floyd's bottom-up heapify does more work on deeper levels with fewer nodes: the sum ∑(h / 2^h) mathematically converges to 2.",
+          "It uses a hash table internally.",
+          "It ignores child comparisons for leaf nodes.",
+          "Binary heaps only operate on power-of-two arrays.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "Leaves require 0 sifts, nodes at height 1 require 1 sift, etc. The summation of node count × height across all levels bounds the total work strictly to O(n).",
+      },
+      {
+        id: "hs2",
+        question: "Why is Heap Sort NOT a stable sorting algorithm?",
+        options: [
+          "Sift-down swaps elements across long distances (indices 2i+1 and 2i+2), disrupting the relative order of identical values.",
+          "Because it runs in O(n log n) time.",
+          "It requires negative numbers to be stable.",
+          "Because max-heapify always reverses the entire array.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "Tree swaps between parents and distant child indices across non-adjacent positions do not preserve original input indices of duplicate items.",
+      },
+    ],
+  },
+  radix: {
+    id: "radix",
+    name: "Radix Sort",
+    category: "Sorting",
+    summary:
+      "Non-comparative integer sorting algorithm that sorts numbers digit by digit from least significant digit (LSD) to most significant digit (MSD) using a stable Counting Sort subroutine. Bypasses the Ω(n log n) comparison lower bound.",
+    timeComplexity: {
+      best: "O(d · (n + k))",
+      average: "O(d · (n + k))",
+      worst: "O(d · (n + k))",
+    },
+    spaceComplexity: "O(n + k)",
+    stable: true,
+    inPlace: false,
+    keyInvariants: [
+      "Subroutine Stability: The digit sorting subroutine (Counting Sort) MUST be stable to preserve relative order of previous digits.",
+      "Digit Induction: After pass d (for base 10 exponent 10^d), the entire array is stably sorted by the lower d digits.",
+      "Non-Comparative Efficiency: Operates in linear time O(d · (n + k)) where d is the maximum digit length and k is radix base (10).",
+    ],
+    cppCode: `void countingSortByDigit(std::vector<int>& arr, int n, int exp) {
+    std::vector<int> output(n);
+    int count[10] = {0};
+    for (int i = 0; i < n; ++i)
+        count[(arr[i] / exp) % 10]++;
+    for (int i = 1; i < 10; ++i)
+        count[i] += count[i - 1];
+    for (int i = n - 1; i >= 0; --i) {
+        int digit = (arr[i] / exp) % 10;
+        output[count[digit] - 1] = arr[i];
+        count[digit]--;
+    }
+    for (int i = 0; i < n; ++i)
+        arr[i] = output[i];
+}
+
+void radixSort(std::vector<int>& arr) {
+    if (arr.empty()) return;
+    int maxVal = *std::max_element(arr.begin(), arr.end());
+    for (int exp = 1; maxVal / exp > 0; exp *= 10)
+        countingSortByDigit(arr, arr.size(), exp);
+}`,
+    quiz: [
+      {
+        id: "rs1",
+        question: "Why must the digit-sorting subroutine in LSD Radix Sort be stable?",
+        options: [
+          "To preserve the sorted order established by previous, less-significant digit passes.",
+          "To prevent integer overflow.",
+          "To avoid allocating auxiliary memory.",
+          "Counting Sort cannot run without stability.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "If two keys share the same digit at the current place value, stability guarantees their relative order (sorted by prior digit passes) is maintained.",
+      },
+      {
+        id: "rs2",
+        question: "When does Radix Sort significantly outperform comparison sorts like Quick Sort or Merge Sort?",
+        options: [
+          "When key length or digit count d is small/constant (d << log n) relative to large array size n.",
+          "When the array is already sorted in reverse order.",
+          "When sorting floating point numbers of infinite precision.",
+          "Only when n <= 5.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "With fixed-size integers (e.g. 32-bit keys with d bounded), O(d · (n + k)) scales linearly O(n), beating O(n log n) comparison sorts for large n.",
+      },
+    ],
+  },
   bst: {
     id: "bst",
     name: "Binary Search Tree (BST)",
@@ -720,6 +934,105 @@ public:
         correctIndex: 0,
         explanation:
           "As α increases, collisions escalate rapidly. Rehashing at α ≈ 0.75 doubles capacity, halving α back down to ~0.375 and maintaining amortized O(1) time.",
+      },
+    ],
+  },
+  trie: {
+    id: "trie",
+    name: "Trie (Prefix Tree) & Autocomplete",
+    category: "Data Structures",
+    summary:
+      "Tree structure where edges represent characters. Compactly stores dictionaries by sharing common prefixes. Guarantees O(L) insert, search, and prefix matching where L is word length, regardless of dictionary size N.",
+    timeComplexity: {
+      best: "O(L)",
+      average: "O(L)",
+      worst: "O(L)",
+    },
+    spaceComplexity: "O(Σ · L · N)",
+    stable: true,
+    inPlace: false,
+    keyInvariants: [
+      "Prefix Sharing: Words sharing common prefixes share the same path from the root down to the branch point (e.g. 'cat', 'car', 'cart').",
+      "Terminal Word Marker (isEndOfWord): A boolean flag distinguishing complete dictionary words from intermediate prefixes.",
+      "Autocomplete via Subtree DFS: All words completing prefix P are gathered by traversing the subtree rooted at node P in O(P + K) time.",
+    ],
+    cppCode: `// C++ Trie Implementation (Prefix Tree)
+#include <string>
+#include <vector>
+
+struct TrieNode {
+    TrieNode* children[26] = {nullptr};
+    bool isEndOfWord = false;
+};
+
+class Trie {
+    TrieNode* root;
+public:
+    Trie() : root(new TrieNode()) {}
+
+    // O(L) Insert
+    void insert(const std::string& word) {
+        TrieNode* curr = root;
+        for (char c : word) {
+            int idx = c - 'a';
+            if (!curr->children[idx]) {
+                curr->children[idx] = new TrieNode();
+            }
+            curr = curr->children[idx];
+        }
+        curr->isEndOfWord = true;
+    }
+
+    // O(L) Search
+    bool search(const std::string& word) {
+        TrieNode* curr = root;
+        for (char c : word) {
+            int idx = c - 'a';
+            if (!curr->children[idx]) return false;
+            curr = curr->children[idx];
+        }
+        return curr->isEndOfWord;
+    }
+
+    // O(P) Prefix Match
+    bool startsWith(const std::string& prefix) {
+        TrieNode* curr = root;
+        for (char c : prefix) {
+            int idx = c - 'a';
+            if (!curr->children[idx]) return false;
+            curr = curr->children[idx];
+        }
+        return true;
+    }
+};`,
+    quiz: [
+      {
+        id: "trie1",
+        question:
+          "Why is searching a word of length L in a Trie strictly O(L) time, even if the dictionary contains 10 million words?",
+        options: [
+          "Because each character match is an O(1) branch traversal down the tree, taking exactly L steps independent of total word count N.",
+          "Because Tries compress words into binary numbers.",
+          "Because compilers hash strings automatically.",
+          "It is only O(L) if the dictionary has fewer than 1000 words.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "A Trie traverses at most one edge per character of the query string. For a word of length L, at most L pointer dereferences are made, achieving strictly O(L) time.",
+      },
+      {
+        id: "trie2",
+        question:
+          "What distinguishes a prefix that exists in a Trie from an actual full dictionary word?",
+        options: [
+          "The terminal node of a full word has its isEndOfWord boolean flag set to true.",
+          "Full words are always leaf nodes with zero children.",
+          "Prefixes are stored in an auxiliary hash table.",
+          "Words must contain at least 5 characters.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "A node can have children and still be a full word (e.g., 'car' is a word, but also prefixes 'cart'). The isEndOfWord marker designates that the path from root constitutes a complete stored word.",
       },
     ],
   },
@@ -1320,6 +1633,546 @@ export function generateQuickSortTrace(initialArray: number[]): AlgorithmTraceSt
   return steps;
 }
 
+export function generateMergeSortTrace(initialArray: number[]): AlgorithmTraceStep[] {
+  const steps: AlgorithmTraceStep[] = [];
+  const arr = [...initialArray];
+  let comparisons = 0;
+  let swaps = 0;
+  let currentPass = 0;
+  const sorted: number[] = [];
+
+  // Step 0: Initial
+  steps.push({
+    stepIndex: 0,
+    action: "init",
+    indices: [],
+    values: [],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 18,
+    counters: { comparisons, swaps },
+    pass: 0,
+    sortedIndices: [],
+    description: `Initial unsorted array of length N = ${arr.length}.`,
+    reasoning:
+      "Merge Sort recursively divides the array in half down to single-element subarrays, then merges pairs in sorted order.",
+    inlineVariables: { arraySize: arr.length },
+  });
+
+  function merge(left: number, mid: number, right: number) {
+    currentPass++;
+    const leftCopy = arr.slice(left, mid + 1);
+    const rightCopy = arr.slice(mid + 1, right + 1);
+
+    steps.push({
+      stepIndex: steps.length,
+      action: "init",
+      indices: [left, right],
+      values: [arr[left], arr[right]],
+      arraySnapshot: [...arr],
+      pointers: { i: left, j: mid + 1, k: left },
+      codeLine: 1,
+      counters: { comparisons, swaps },
+      pass: currentPass,
+      sortedIndices: [...sorted],
+      description: `Begin merge on range [${left}..${right}] (Left: [${left}..${mid}], Right: [${mid + 1}..${right}]).`,
+      reasoning: `Allocated auxiliary buffer of size ${right - left + 1}. Two-pointer comparison begins.`,
+      inlineVariables: { left, mid, right, leftLen: leftCopy.length, rightLen: rightCopy.length },
+    });
+
+    let pL = 0;
+    let pR = 0;
+    let k = left;
+
+    while (pL < leftCopy.length && pR < rightCopy.length) {
+      comparisons++;
+      const vL = leftCopy[pL];
+      const vR = rightCopy[pR];
+
+      steps.push({
+        stepIndex: steps.length,
+        action: "compare",
+        indices: [left + pL, mid + 1 + pR],
+        values: [vL, vR],
+        arraySnapshot: [...arr],
+        pointers: { i: left + pL, j: mid + 1 + pR, k },
+        codeLine: 8,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Comparing left element (${vL}) vs right element (${vR}).`,
+        reasoning:
+          vL <= vR
+            ? `Left element ${vL} <= ${vR}. Stability preserved: picking left element first. Placing at index ${k}.`
+            : `Right element ${vR} < ${vL}. Placing ${vR} at index ${k}.`,
+        inlineVariables: { leftVal: vL, rightVal: vR, targetIndex: k },
+      });
+
+      if (vL <= vR) {
+        arr[k] = vL;
+        pL++;
+      } else {
+        arr[k] = vR;
+        pR++;
+      }
+      swaps++;
+
+      steps.push({
+        stepIndex: steps.length,
+        action: "overwrite",
+        indices: [k],
+        values: [arr[k]],
+        arraySnapshot: [...arr],
+        pointers: { k },
+        codeLine: 9,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Placed ${arr[k]} into merged array at index ${k}.`,
+        reasoning: `Element placed in sorted order within subarray [${left}..${right}].`,
+        inlineVariables: { placedVal: arr[k], targetIndex: k },
+      });
+      k++;
+    }
+
+    while (pL < leftCopy.length) {
+      arr[k] = leftCopy[pL];
+      swaps++;
+      steps.push({
+        stepIndex: steps.length,
+        action: "overwrite",
+        indices: [k],
+        values: [arr[k]],
+        arraySnapshot: [...arr],
+        pointers: { k },
+        codeLine: 14,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Copied remaining left element (${arr[k]}) into [${k}].`,
+        reasoning: `Right subarray exhausted; remaining left elements are already in sorted order.`,
+        inlineVariables: { placedVal: arr[k], targetIndex: k },
+      });
+      pL++;
+      k++;
+    }
+
+    while (pR < rightCopy.length) {
+      arr[k] = rightCopy[pR];
+      swaps++;
+      steps.push({
+        stepIndex: steps.length,
+        action: "overwrite",
+        indices: [k],
+        values: [arr[k]],
+        arraySnapshot: [...arr],
+        pointers: { k },
+        codeLine: 15,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Copied remaining right element (${arr[k]}) into [${k}].`,
+        reasoning: `Left subarray exhausted; remaining right elements copied directly.`,
+        inlineVariables: { placedVal: arr[k], targetIndex: k },
+      });
+      pR++;
+      k++;
+    }
+
+    if (left === 0 && right === arr.length - 1) {
+      for (let idx = 0; idx < arr.length; idx++) {
+        if (!sorted.includes(idx)) sorted.push(idx);
+      }
+    }
+  }
+
+  function sort(left: number, right: number) {
+    if (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      steps.push({
+        stepIndex: steps.length,
+        action: "compare",
+        indices: [left, right],
+        values: [arr[left], arr[right]],
+        arraySnapshot: [...arr],
+        pointers: { i: left, j: right },
+        codeLine: 20,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Divide: Halving range [${left}..${right}] at mid index ${mid}.`,
+        reasoning: `Recursively dividing array into subproblems of size ${mid - left + 1} and ${right - mid}.`,
+        inlineVariables: { left, mid, right },
+      });
+
+      sort(left, mid);
+      sort(mid + 1, right);
+      merge(left, mid, right);
+    }
+  }
+
+  sort(0, arr.length - 1);
+
+  for (let k = 0; k < arr.length; k++) {
+    if (!sorted.includes(k)) sorted.push(k);
+  }
+
+  steps.push({
+    stepIndex: steps.length,
+    action: "sorted",
+    indices: Array.from({ length: arr.length }, (_, k) => k),
+    values: [...arr],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 23,
+    counters: { comparisons, swaps },
+    pass: currentPass,
+    sortedIndices: [...sorted],
+    description: "Array is fully sorted via Merge Sort.",
+    reasoning: "All recursive divide-and-conquer subproblems merged in guaranteed O(n log n) time.",
+    inlineVariables: { status: "Complete", totalComparisons: comparisons, totalOverwrites: swaps },
+  });
+
+  return steps;
+}
+
+export function generateHeapSortTrace(array: number[]): AlgorithmTraceStep[] {
+  const steps: AlgorithmTraceStep[] = [];
+  const arr = [...array];
+  const n = arr.length;
+  let comparisons = 0;
+  let swaps = 0;
+  let currentPass = 0;
+  const sorted: number[] = [];
+
+  // Step 0: Initial
+  steps.push({
+    stepIndex: 0,
+    action: "init",
+    indices: [],
+    values: [],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 16,
+    counters: { comparisons, swaps },
+    pass: 0,
+    sortedIndices: [],
+    description: `Initial unsorted array of length N = ${n}.`,
+    reasoning:
+      "Heap Sort first converts the array into a max-heap in O(n) time, then repeatedly extracts the root max element to the sorted suffix.",
+    inlineVariables: { arraySize: n, phase: "Build-Heap" },
+  });
+
+  if (n <= 1) {
+    steps.push({
+      stepIndex: steps.length,
+      action: "sorted",
+      indices: Array.from({ length: n }, (_, k) => k),
+      values: [...arr],
+      arraySnapshot: [...arr],
+      pointers: {},
+      codeLine: 22,
+      counters: { comparisons, swaps },
+      pass: 0,
+      sortedIndices: Array.from({ length: n }, (_, k) => k),
+      description: "Array is sorted.",
+      reasoning: "Array with length <= 1 is trivially sorted.",
+      inlineVariables: { status: "Complete" },
+    });
+    return steps;
+  }
+
+  function heapify(heapSize: number, i: number) {
+    let largest = i;
+    const left = 2 * i + 1;
+    const right = 2 * i + 2;
+
+    if (left < heapSize) {
+      comparisons++;
+      steps.push({
+        stepIndex: steps.length,
+        action: "compare",
+        indices: [largest, left],
+        values: [arr[largest], arr[left]],
+        arraySnapshot: [...arr],
+        pointers: { i: largest, j: left },
+        codeLine: 5,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Comparing parent arr[${largest}]=${arr[largest]} with left child arr[${left}]=${arr[left]}.`,
+        reasoning:
+          arr[left] > arr[largest]
+            ? `Left child ${arr[left]} exceeds parent ${arr[largest]}; candidate for promotion.`
+            : `Parent ${arr[largest]} satisfies heap property against left child ${arr[left]}.`,
+        inlineVariables: { parent: largest, leftChild: left, heapBoundary: heapSize },
+      });
+      if (arr[left] > arr[largest]) {
+        largest = left;
+      }
+    }
+
+    if (right < heapSize) {
+      comparisons++;
+      steps.push({
+        stepIndex: steps.length,
+        action: "compare",
+        indices: [largest, right],
+        values: [arr[largest], arr[right]],
+        arraySnapshot: [...arr],
+        pointers: { i: largest, j: right },
+        codeLine: 7,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Comparing current largest arr[${largest}]=${arr[largest]} with right child arr[${right}]=${arr[right]}.`,
+        reasoning:
+          arr[right] > arr[largest]
+            ? `Right child ${arr[right]} exceeds largest element ${arr[largest]}; candidate for promotion.`
+            : `Right child ${arr[right]} does not exceed largest element ${arr[largest]}.`,
+        inlineVariables: { largest, rightChild: right, heapBoundary: heapSize },
+      });
+      if (arr[right] > arr[largest]) {
+        largest = right;
+      }
+    }
+
+    if (largest !== i) {
+      swaps++;
+      const valI = arr[i];
+      const valL = arr[largest];
+      arr[i] = valL;
+      arr[largest] = valI;
+
+      steps.push({
+        stepIndex: steps.length,
+        action: "swap",
+        indices: [i, largest],
+        values: [arr[i], arr[largest]],
+        arraySnapshot: [...arr],
+        pointers: { i, j: largest },
+        codeLine: 10,
+        counters: { comparisons, swaps },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Swapped arr[${i}]=${valI} with larger child arr[${largest}]=${valL} to restore max-heap invariant.`,
+        reasoning: `Max-heap requires parent to be greater than or equal to both children. Sifting down to subtree at index ${largest}.`,
+        inlineVariables: { swappedParent: i, swappedChild: largest, heapBoundary: heapSize },
+      });
+
+      heapify(heapSize, largest);
+    }
+  }
+
+  // Phase 1: Build Max-Heap
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    currentPass++;
+    heapify(n, i);
+  }
+
+  // Phase 2: Extraction
+  for (let i = n - 1; i > 0; i--) {
+    currentPass++;
+    swaps++;
+    const rootVal = arr[0];
+    const boundaryVal = arr[i];
+    arr[0] = boundaryVal;
+    arr[i] = rootVal;
+
+    steps.push({
+      stepIndex: steps.length,
+      action: "swap",
+      indices: [0, i],
+      values: [arr[0], arr[i]],
+      arraySnapshot: [...arr],
+      pointers: { i: 0, j: i },
+      codeLine: 20,
+      counters: { comparisons, swaps },
+      pass: currentPass,
+      sortedIndices: [...sorted],
+      description: `Extracted max root element (${rootVal}) to boundary index ${i}.`,
+      reasoning:
+        "The root of a max-heap is guaranteed to be the maximum among all remaining heap elements. Moving it to its final sorted position.",
+      inlineVariables: { maxExtracted: rootVal, targetIndex: i, remainingHeapSize: i },
+    });
+
+    sorted.unshift(i);
+
+    steps.push({
+      stepIndex: steps.length,
+      action: "sorted",
+      indices: [i],
+      values: [arr[i]],
+      arraySnapshot: [...arr],
+      pointers: { j: i },
+      codeLine: 20,
+      counters: { comparisons, swaps },
+      pass: currentPass,
+      sortedIndices: [...sorted],
+      description: `Index ${i} (${arr[i]}) locked into sorted suffix.`,
+      reasoning: `The suffix [${i}..${n - 1}] is permanently sorted. Active heap reduced to [0..${i - 1}].`,
+      inlineVariables: { lockedIndex: i, remainingHeapSize: i },
+    });
+
+    heapify(i, 0);
+  }
+
+  sorted.unshift(0);
+
+  steps.push({
+    stepIndex: steps.length,
+    action: "sorted",
+    indices: Array.from({ length: n }, (_, k) => k),
+    values: [...arr],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 22,
+    counters: { comparisons, swaps },
+    pass: currentPass,
+    sortedIndices: [...sorted],
+    description: "Array is completely sorted via Heap Sort.",
+    reasoning:
+      "All elements extracted from binary max-heap. In-place O(n log n) sorting complete with O(1) auxiliary space.",
+    inlineVariables: { status: "Complete", totalComparisons: comparisons, totalSwaps: swaps },
+  });
+
+  return steps;
+}
+
+export function generateRadixSortTrace(array: number[]): AlgorithmTraceStep[] {
+  const steps: AlgorithmTraceStep[] = [];
+  const arr = [...array];
+  const n = arr.length;
+  let comparisons = 0;
+  let overwrites = 0;
+  let currentPass = 0;
+  const sorted: number[] = [];
+
+  // Step 0: Initial
+  steps.push({
+    stepIndex: 0,
+    action: "init",
+    indices: [],
+    values: [],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 18,
+    counters: { comparisons, swaps: overwrites },
+    pass: 0,
+    sortedIndices: [],
+    description: `Initial unsorted array of length N = ${n}.`,
+    reasoning:
+      "LSD Radix Sort sorts keys digit-by-digit from least significant to most significant using stable Counting Sort passes.",
+    inlineVariables: { arraySize: n, algorithm: "LSD Radix Sort" },
+  });
+
+  if (n <= 1) {
+    steps.push({
+      stepIndex: steps.length,
+      action: "sorted",
+      indices: Array.from({ length: n }, (_, k) => k),
+      values: [...arr],
+      arraySnapshot: [...arr],
+      pointers: {},
+      codeLine: 22,
+      counters: { comparisons, swaps: overwrites },
+      pass: 0,
+      sortedIndices: Array.from({ length: n }, (_, k) => k),
+      description: "Array is sorted.",
+      reasoning: "Array with length <= 1 is trivially sorted.",
+      inlineVariables: { status: "Complete" },
+    });
+    return steps;
+  }
+
+  const maxVal = Math.max(...arr);
+
+  for (let exp = 1; Math.floor(maxVal / exp) > 0; exp *= 10) {
+    currentPass++;
+    const placeName =
+      exp === 1 ? "1s (units)" : exp === 10 ? "10s (tens)" : exp === 100 ? "100s (hundreds)" : `${exp}s`;
+
+    // Counting phase
+    const count = new Array(10).fill(0);
+    for (let i = 0; i < n; i++) {
+      comparisons++;
+      const digit = Math.floor(arr[i] / exp) % 10;
+      count[digit]++;
+
+      steps.push({
+        stepIndex: steps.length,
+        action: "compare",
+        indices: [i],
+        values: [arr[i]],
+        arraySnapshot: [...arr],
+        pointers: { i },
+        codeLine: 5,
+        counters: { comparisons, swaps: overwrites },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Inspecting ${arr[i]} at ${placeName} place: digit = ${digit}.`,
+        reasoning: `Bucketing key into count frequency array for digit ${digit}.`,
+        inlineVariables: { element: arr[i], digit, exponent: exp, countForDigit: count[digit] },
+      });
+    }
+
+    // Prefix sum / cumulative positions
+    for (let i = 1; i < 10; i++) {
+      count[i] += count[i - 1];
+    }
+
+    // Output array construction (iterating backwards to preserve stability!)
+    const output = new Array(n).fill(0);
+    for (let i = n - 1; i >= 0; i--) {
+      const digit = Math.floor(arr[i] / exp) % 10;
+      output[count[digit] - 1] = arr[i];
+      count[digit]--;
+    }
+
+    // Overwrite back to array
+    for (let i = 0; i < n; i++) {
+      arr[i] = output[i];
+      overwrites++;
+
+      steps.push({
+        stepIndex: steps.length,
+        action: "overwrite",
+        indices: [i],
+        values: [arr[i]],
+        arraySnapshot: [...arr],
+        pointers: { k: i },
+        codeLine: 14,
+        counters: { comparisons, swaps: overwrites },
+        pass: currentPass,
+        sortedIndices: [...sorted],
+        description: `Placed ${arr[i]} into index ${i} sorted stably by ${placeName} digit.`,
+        reasoning: `Values stably relocated according to cumulative frequency offsets for digit place ${exp}.`,
+        inlineVariables: { placedValue: arr[i], targetIndex: i, digitPlace: exp },
+      });
+    }
+  }
+
+  // All passes complete, array is fully sorted
+  const allIndices = Array.from({ length: n }, (_, k) => k);
+  steps.push({
+    stepIndex: steps.length,
+    action: "sorted",
+    indices: allIndices,
+    values: [...arr],
+    arraySnapshot: [...arr],
+    pointers: {},
+    codeLine: 22,
+    counters: { comparisons, swaps: overwrites },
+    pass: currentPass,
+    sortedIndices: allIndices,
+    description: "Array is completely sorted via LSD Radix Sort.",
+    reasoning: "All digit places processed stably. Linear O(d · (n + k)) non-comparative sort completed.",
+    inlineVariables: { status: "Complete", totalDigits: currentPass, totalOverwrites: overwrites },
+  });
+
+  return steps;
+}
+
 export function getAlgorithmTrace(algorithmId: string, array: number[]): AlgorithmTraceStep[] {
   switch (algorithmId) {
     case "bubble":
@@ -1330,6 +2183,12 @@ export function getAlgorithmTrace(algorithmId: string, array: number[]): Algorit
       return generateInsertionSortTrace(array);
     case "quick":
       return generateQuickSortTrace(array);
+    case "merge":
+      return generateMergeSortTrace(array);
+    case "heapsort":
+      return generateHeapSortTrace(array);
+    case "radix":
+      return generateRadixSortTrace(array);
     default:
       return generateBubbleSortTrace(array);
   }

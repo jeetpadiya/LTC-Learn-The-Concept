@@ -54,7 +54,10 @@ int main(int argc, char* argv[]) {
             "bubble",
             "selection",
             "insertion",
-            "quick"
+            "quick",
+            "merge",
+            "heapsort",
+            "radix"
         };
         return res;
     });
@@ -100,6 +103,12 @@ int main(int argc, char* argv[]) {
             steps = dsa::SortEngine::insertionSort(arr);
         } else if (algo == "quick") {
             steps = dsa::SortEngine::quickSort(arr);
+        } else if (algo == "merge") {
+            steps = dsa::SortEngine::mergeSort(arr);
+        } else if (algo == "heapsort") {
+            steps = dsa::SortEngine::heapSort(arr);
+        } else if (algo == "radix") {
+            steps = dsa::SortEngine::radixSort(arr);
         } else {
             res.code = 404;
             crow::json::wvalue err;
@@ -155,6 +164,9 @@ int main(int argc, char* argv[]) {
         else if (algo == "selection") steps = dsa::SortEngine::selectionSort(arr);
         else if (algo == "insertion") steps = dsa::SortEngine::insertionSort(arr);
         else if (algo == "quick") steps = dsa::SortEngine::quickSort(arr);
+        else if (algo == "merge") steps = dsa::SortEngine::mergeSort(arr);
+        else if (algo == "heapsort") steps = dsa::SortEngine::heapSort(arr);
+        else if (algo == "radix") steps = dsa::SortEngine::radixSort(arr);
 
         for (const auto& step : steps) {
             conn.send_text(step.toJson().dump());

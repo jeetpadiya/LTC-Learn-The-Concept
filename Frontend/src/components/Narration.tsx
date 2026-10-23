@@ -24,8 +24,11 @@ export default function Narration() {
     currentHeapStepIndex,
     hashTableSteps,
     currentHashTableStepIndex,
+    trieSteps,
+    currentTrieStepIndex,
   } = useVisualizerStore();
 
+  const isTrie = selectedTopic === "trie";
   const isHashTable = selectedTopic === "hashtable";
   const isHeap = selectedTopic === "heap";
   const isArray = selectedTopic === "array";
@@ -34,7 +37,9 @@ export default function Narration() {
   const isLinkedList = selectedTopic === "linkedlist";
   const isStackQueue = selectedTopic === "stackqueue";
 
-  const activeStep = isHashTable
+  const activeStep = isTrie
+    ? trieSteps[currentTrieStepIndex] || trieSteps[0]
+    : isHashTable
     ? hashTableSteps[currentHashTableStepIndex] || hashTableSteps[0]
     : isHeap
     ? heapSteps[currentHeapStepIndex] || heapSteps[0]
@@ -53,7 +58,11 @@ export default function Narration() {
   // Retrieve last 3 steps history (excluding current step)
   const historySteps = React.useMemo(() => {
     const list = [];
-    if (isHashTable) {
+    if (isTrie) {
+      for (let i = currentTrieStepIndex - 1; i >= Math.max(0, currentTrieStepIndex - 3); i--) {
+        list.push(trieSteps[i]);
+      }
+    } else if (isHashTable) {
       for (let i = currentHashTableStepIndex - 1; i >= Math.max(0, currentHashTableStepIndex - 3); i--) {
         list.push(hashTableSteps[i]);
       }
@@ -87,7 +96,7 @@ export default function Narration() {
       }
     }
     return list;
-  }, [isHashTable, isHeap, isArray, isStackQueue, isLinkedList, isGraph, isTree, steps, currentStepIndex, treeSteps, currentTreeStepIndex, graphSteps, currentGraphStepIndex, linkedListSteps, currentLinkedListStepIndex, stackQueueSteps, currentStackQueueStepIndex, dynamicArraySteps, currentDynamicArrayStepIndex, heapSteps, currentHeapStepIndex, hashTableSteps, currentHashTableStepIndex]);
+  }, [isTrie, isHashTable, isHeap, isArray, isStackQueue, isLinkedList, isGraph, isTree, steps, currentStepIndex, treeSteps, currentTreeStepIndex, graphSteps, currentGraphStepIndex, linkedListSteps, currentLinkedListStepIndex, stackQueueSteps, currentStackQueueStepIndex, dynamicArraySteps, currentDynamicArrayStepIndex, heapSteps, currentHeapStepIndex, hashTableSteps, currentHashTableStepIndex, trieSteps, currentTrieStepIndex]);
 
   const getActionIcon = (action: string) => {
     switch (action) {
@@ -125,6 +134,8 @@ export default function Narration() {
       case "resize":
       case "heapify":
       case "rehash":
+      case "startsWith":
+      case "autocomplete":
         return <Compass className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />;
       default:
         return null;
@@ -138,7 +149,7 @@ export default function Narration() {
         <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
           <span>
             STEP {activeStep?.stepIndex ?? 0}
-            {!isTree && !isGraph && !isLinkedList && !isStackQueue && !isArray && !isHeap && !isHashTable && ` • PASS ${(activeStep as any)?.pass ?? 1}`}
+            {!isTree && !isGraph && !isLinkedList && !isStackQueue && !isArray && !isHeap && !isHashTable && !isTrie && ` • PASS ${(activeStep as any)?.pass ?? 1}`}
           </span>
           <span className="uppercase font-semibold tracking-wider text-[var(--accent)]">
             {(activeStep as any)?.action || (activeStep as any)?.operation || (activeStep as any)?.algorithm || (activeStep as any)?.mode || "STEP"}

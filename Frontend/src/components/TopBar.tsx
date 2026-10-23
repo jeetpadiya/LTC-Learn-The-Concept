@@ -10,6 +10,7 @@ import {
   Moon,
   X,
   Check,
+  BookOpen,
 } from "lucide-react";
 
 export default function TopBar() {
@@ -29,6 +30,7 @@ export default function TopBar() {
     setShowInlineQuiz,
     isBackendOnline,
     openCustomModal,
+    openCheatSheet,
   } = useVisualizerStore();
 
   const isTree = selectedTopic === "bst";
@@ -38,7 +40,8 @@ export default function TopBar() {
   const isArray = selectedTopic === "array";
   const isHeap = selectedTopic === "heap";
   const isHashTable = selectedTopic === "hashtable";
-  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable;
+  const isTrie = selectedTopic === "trie";
+  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable || isTrie;
 
   // Filled track percentage for N slider
   const nPct = ((arraySize - 5) / (24 - 5)) * 100;
@@ -99,6 +102,12 @@ export default function TopBar() {
               <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
               <span className="font-semibold text-[var(--text-primary)]">Hash Table & Collisions</span>
               <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">• Separate Chaining, Linear Probing & 2× Rehashing</span>
+            </div>
+          ) : isTrie ? (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-raised)] text-xs">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+              <span className="font-semibold text-[var(--text-primary)]">Trie (Prefix Tree)</span>
+              <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">• Prefix Compression & Live Autocomplete</span>
             </div>
           ) : (
             <>
@@ -202,6 +211,15 @@ export default function TopBar() {
               }`}
             >
               Quiz
+            </button>
+
+            <button
+              onClick={openCheatSheet}
+              className="px-2.5 py-1 rounded text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
+              title="Open Comprehensive DSA Cheat Sheet & Complexity Matrix"
+            >
+              <BookOpen className="w-3 h-3 text-[var(--accent)]" />
+              <span>Cheat Sheet</span>
             </button>
           </div>
 

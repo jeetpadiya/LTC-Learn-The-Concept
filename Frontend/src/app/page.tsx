@@ -21,6 +21,8 @@ import HeapVisualizer from "@/components/HeapVisualizer";
 import HeapControls from "@/components/HeapControls";
 import HashTableVisualizer from "@/components/HashTableVisualizer";
 import HashTableControls from "@/components/HashTableControls";
+import TrieVisualizer from "@/components/TrieVisualizer";
+import TrieControls from "@/components/TrieControls";
 import ArrayRow from "@/components/ArrayRow";
 import LegendStrip from "@/components/LegendStrip";
 import PlaybackBar from "@/components/PlaybackBar";
@@ -30,6 +32,7 @@ import ComplexityPanel from "@/components/ComplexityPanel";
 import PredictBanner from "@/components/PredictBanner";
 import InlineQuiz from "@/components/InlineQuiz";
 import CustomArrayModal from "@/components/CustomArrayModal";
+import DsaMatrixModal from "@/components/DsaMatrixModal";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -61,6 +64,8 @@ export default function Home() {
     hashTableSteps,
     currentHashTableStepIndex,
     hashStrategy,
+    trieSteps,
+    currentTrieStepIndex,
     theme,
     playbackSpeed,
     isCompareMode,
@@ -79,7 +84,8 @@ export default function Home() {
   const isArray = selectedTopic === "array";
   const isHeap = selectedTopic === "heap";
   const isHashTable = selectedTopic === "hashtable";
-  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable;
+  const isTrie = selectedTopic === "trie";
+  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable || isTrie;
 
   const currentStep = steps[currentStepIndex] || steps[0];
   const currentTreeStep = treeSteps[currentTreeStepIndex] || treeSteps[0];
@@ -89,6 +95,7 @@ export default function Home() {
   const currentDynamicArrayStep = dynamicArraySteps[currentDynamicArrayStepIndex] || dynamicArraySteps[0];
   const currentHeapStep = heapSteps[currentHeapStepIndex] || heapSteps[0];
   const currentHashTableStep = hashTableSteps[currentHashTableStepIndex] || hashTableSteps[0];
+  const currentTrieStep = trieSteps[currentTrieStepIndex] || trieSteps[0];
   const algorithm = ALGORITHMS[selectedTopic];
 
   // Derive locked sorted elements set
@@ -195,7 +202,27 @@ export default function Home() {
 
           {/* Visualization Stage Container: Flex-fills available height cleanly */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {isHashTable ? (
+            {isTrie ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                {/* Trie Visualizer (Prefix Tree & Autocomplete Engine) */}
+                <div className="flex-1 w-full min-h-0 overflow-hidden">
+                  <TrieVisualizer
+                    nodes={currentTrieStep?.nodes || {}}
+                    wordList={currentTrieStep?.wordList || []}
+                    operation={currentTrieStep?.operation || "init"}
+                    activeNodeId={currentTrieStep?.activeNodeId}
+                    activeChar={currentTrieStep?.activeChar}
+                    charIndex={currentTrieStep?.charIndex}
+                    targetWord={currentTrieStep?.targetWord}
+                    suggestions={currentTrieStep?.suggestions}
+                    theme={theme}
+                  />
+                </div>
+
+                {/* Interactive Trie Operation Controls */}
+                <TrieControls />
+              </div>
+            ) : isHashTable ? (
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Hash Table Visualizer (Chaining vs Linear Probing & Rehashing) */}
                 <div className="flex-1 w-full min-h-0 overflow-hidden">
@@ -383,6 +410,9 @@ export default function Home() {
 
       {/* Interactive Custom Array Input Builder */}
       <CustomArrayModal />
+
+      {/* Comprehensive DSA Cheat Sheet & Complexity Matrix Modal */}
+      <DsaMatrixModal />
     </div>
   );
 }

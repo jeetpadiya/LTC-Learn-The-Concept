@@ -253,6 +253,50 @@ void rehash() {
     capacity = newCap;
 }`;
 
+const TRIE_INSERT_CPP = `// Trie Word Insertion - O(L) Time (L = Word Length)
+void insert(const std::string& word) {
+    TrieNode* curr = root;
+    for (char c : word) {
+        int idx = c - 'a';
+        if (!curr->children[idx]) {
+            curr->children[idx] = new TrieNode(); // New branch
+        }
+        curr = curr->children[idx]; // Traverse down
+    }
+    curr->isEndOfWord = true; // Mark terminal
+}`;
+
+const TRIE_SEARCH_CPP = `// Trie Word Search - O(L) Time
+bool search(const std::string& word) {
+    TrieNode* curr = root;
+    for (char c : word) {
+        int idx = c - 'a';
+        if (!curr->children[idx]) return false; // Missing branch
+        curr = curr->children[idx];
+    }
+    return curr->isEndOfWord; // Must be complete word
+}`;
+
+const TRIE_PREFIX_CPP = `// Trie Prefix Match & Autocomplete - O(P) Time
+bool startsWith(const std::string& prefix) {
+    TrieNode* curr = root;
+    for (char c : prefix) {
+        int idx = c - 'a';
+        if (!curr->children[idx]) return false;
+        curr = curr->children[idx];
+    }
+    return true; // Prefix path exists
+}
+
+void collectWords(TrieNode* node, string prefix, vector<string>& results) {
+    if (node->isEndOfWord) results.push_back(prefix);
+    for (int i = 0; i < 26; ++i) {
+        if (node->children[i]) {
+            collectWords(node->children[i], prefix + char('a' + i), results);
+        }
+    }
+}`;
+
 export default function CodePanel() {
   const {
     selectedTopic,
@@ -275,8 +319,11 @@ export default function CodePanel() {
     hashTableSteps,
     currentHashTableStepIndex,
     hashStrategy,
+    trieSteps,
+    currentTrieStepIndex,
   } = useVisualizerStore();
 
+  const isTrie = selectedTopic === "trie";
   const isHashTable = selectedTopic === "hashtable";
   const isHeap = selectedTopic === "heap";
   const isArray = selectedTopic === "array";
@@ -286,7 +333,9 @@ export default function CodePanel() {
   const isStackQueue = selectedTopic === "stackqueue";
   const algorithm = ALGORITHMS[selectedTopic];
 
-  const activeStep = isHashTable
+  const activeStep = isTrie
+    ? trieSteps[currentTrieStepIndex]
+    : isHashTable
     ? hashTableSteps[currentHashTableStepIndex]
     : isHeap
     ? heapSteps[currentHeapStepIndex]
@@ -308,6 +357,12 @@ export default function CodePanel() {
   const [copied, setCopied] = useState(false);
 
   const displayCode = React.useMemo(() => {
+    if (isTrie) {
+      const op = (activeStep as any)?.operation;
+      if (op === "search") return TRIE_SEARCH_CPP;
+      if (op === "startsWith" || op === "autocomplete") return TRIE_PREFIX_CPP;
+      return TRIE_INSERT_CPP;
+    }
     if (isHashTable) {
       const op = (activeStep as any)?.operation;
       if (op === "rehash") return HASH_REHASH_CPP;
@@ -340,7 +395,7 @@ export default function CodePanel() {
       return stackQueueMode === "stack" ? STACK_CPP_CODE : QUEUE_CPP_CODE;
     }
     return algorithm?.cppCode || "";
-  }, [isHashTable, hashStrategy, isHeap, isArray, isGraph, graphAlgorithm, isLinkedList, isStackQueue, stackQueueMode, activeStep, algorithm]);
+  }, [isTrie, isHashTable, hashStrategy, isHeap, isArray, isGraph, graphAlgorithm, isLinkedList, isStackQueue, stackQueueMode, activeStep, algorithm]);
 
   const handleCopy = () => {
     if (!displayCode) return;
