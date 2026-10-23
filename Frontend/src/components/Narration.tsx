@@ -26,8 +26,14 @@ export default function Narration() {
     currentHashTableStepIndex,
     trieSteps,
     currentTrieStepIndex,
+    avlSteps,
+    currentAvlStepIndex,
+    dsuSteps,
+    currentDsuStepIndex,
   } = useVisualizerStore();
 
+  const isAvl = selectedTopic === "avltree";
+  const isDisjointSet = selectedTopic === "disjointset";
   const isTrie = selectedTopic === "trie";
   const isHashTable = selectedTopic === "hashtable";
   const isHeap = selectedTopic === "heap";
@@ -37,7 +43,11 @@ export default function Narration() {
   const isLinkedList = selectedTopic === "linkedlist";
   const isStackQueue = selectedTopic === "stackqueue";
 
-  const activeStep = isTrie
+  const activeStep = isAvl
+    ? avlSteps[currentAvlStepIndex] || avlSteps[0]
+    : isDisjointSet
+    ? dsuSteps[currentDsuStepIndex] || dsuSteps[0]
+    : isTrie
     ? trieSteps[currentTrieStepIndex] || trieSteps[0]
     : isHashTable
     ? hashTableSteps[currentHashTableStepIndex] || hashTableSteps[0]
@@ -58,7 +68,15 @@ export default function Narration() {
   // Retrieve last 3 steps history (excluding current step)
   const historySteps = React.useMemo(() => {
     const list = [];
-    if (isTrie) {
+    if (isAvl) {
+      for (let i = currentAvlStepIndex - 1; i >= Math.max(0, currentAvlStepIndex - 3); i--) {
+        list.push(avlSteps[i]);
+      }
+    } else if (isDisjointSet) {
+      for (let i = currentDsuStepIndex - 1; i >= Math.max(0, currentDsuStepIndex - 3); i--) {
+        list.push(dsuSteps[i]);
+      }
+    } else if (isTrie) {
       for (let i = currentTrieStepIndex - 1; i >= Math.max(0, currentTrieStepIndex - 3); i--) {
         list.push(trieSteps[i]);
       }
@@ -96,7 +114,40 @@ export default function Narration() {
       }
     }
     return list;
-  }, [isTrie, isHashTable, isHeap, isArray, isStackQueue, isLinkedList, isGraph, isTree, steps, currentStepIndex, treeSteps, currentTreeStepIndex, graphSteps, currentGraphStepIndex, linkedListSteps, currentLinkedListStepIndex, stackQueueSteps, currentStackQueueStepIndex, dynamicArraySteps, currentDynamicArrayStepIndex, heapSteps, currentHeapStepIndex, hashTableSteps, currentHashTableStepIndex, trieSteps, currentTrieStepIndex]);
+  }, [
+    isAvl,
+    isDisjointSet,
+    isTrie,
+    isHashTable,
+    isHeap,
+    isArray,
+    isStackQueue,
+    isLinkedList,
+    isGraph,
+    isTree,
+    steps,
+    currentStepIndex,
+    treeSteps,
+    currentTreeStepIndex,
+    graphSteps,
+    currentGraphStepIndex,
+    linkedListSteps,
+    currentLinkedListStepIndex,
+    stackQueueSteps,
+    currentStackQueueStepIndex,
+    dynamicArraySteps,
+    currentDynamicArrayStepIndex,
+    heapSteps,
+    currentHeapStepIndex,
+    hashTableSteps,
+    currentHashTableStepIndex,
+    trieSteps,
+    currentTrieStepIndex,
+    avlSteps,
+    currentAvlStepIndex,
+    dsuSteps,
+    currentDsuStepIndex,
+  ]);
 
   const getActionIcon = (action: string) => {
     switch (action) {

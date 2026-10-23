@@ -334,3 +334,60 @@ export interface AlgorithmMeta {
 }
 
 export type ArrayPreset = "random" | "sorted" | "reversed" | "few-unique" | "custom";
+
+// AVL & Balanced Tree Types
+export type AvlRotationType = "none" | "LL" | "RR" | "LR" | "RL";
+
+export interface AvlNode3D {
+  id: string;
+  value: number;
+  height: number;
+  balanceFactor: number;
+  x: number;
+  y: number;
+  z: number;
+  leftId?: string;
+  rightId?: string;
+  state: TreeNodeState | "imbalanced" | "rotating";
+}
+
+export interface AvlTraceStep {
+  stepIndex: number;
+  operation: "insert" | "search" | "delete" | "rotate" | "rebalance" | "init";
+  nodes: AvlNode3D[];
+  edges: TreeEdge3D[];
+  activeNodeId?: string;
+  rotationType?: AvlRotationType;
+  imbalancedNodeId?: string;
+  description: string;
+  reasoning: string;
+  codeLine: number;
+  inlineVariables: Record<string, string | number>;
+}
+
+// Disjoint Set Union (DSU / Union-Find) Types
+export type DsuItemState = "default" | "querying" | "compressing" | "unioning" | "root";
+
+export interface DsuElement {
+  id: number;
+  label: string;
+  parent: number;
+  rank: number;
+  size: number;
+  root: number;
+  state: DsuItemState;
+}
+
+export interface DsuTraceStep {
+  stepIndex: number;
+  operation: "find" | "union" | "connected" | "init";
+  elements: DsuElement[];
+  activeIds?: number[];
+  rootX?: number;
+  rootY?: number;
+  connected?: boolean;
+  description: string;
+  reasoning: string;
+  codeLine: number;
+  inlineVariables: Record<string, string | number>;
+}

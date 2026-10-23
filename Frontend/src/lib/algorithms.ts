@@ -1036,6 +1036,189 @@ public:
       },
     ],
   },
+  avltree: {
+    id: "avltree",
+    name: "AVL & Balanced Tree",
+    category: "Data Structures",
+    summary:
+      "Self-balancing Binary Search Tree where the heights of the two child subtrees of any node differ by at most one (Balance Factor BF ∈ {-1, 0, +1}). Guaranteed strictly O(log n) time for lookup, insertion, and deletion via 4 rotation cases (LL, RR, LR, RL).",
+    timeComplexity: {
+      best: "O(log n)",
+      average: "O(log n)",
+      worst: "O(log n)",
+    },
+    spaceComplexity: "O(n)",
+    stable: true,
+    inPlace: false,
+    keyInvariants: [
+      "Strict Balance Factor: For every node N, BF(N) = height(Left) - height(Right) ∈ {-1, 0, +1}.",
+      "Logarithmic Height Bound: Maximum height is mathematically bounded by 1.44 · log₂(n + 2), preventing BST degeneracy.",
+      "O(1) Local Rebalance: Single and double rotations restore balance in O(1) pointer updates without violating BST ordering.",
+    ],
+    cppCode: `struct AVLNode {
+    int key, height;
+    AVLNode *left = nullptr, *right = nullptr;
+    AVLNode(int k) : key(k), height(1) {}
+};
+
+int height(AVLNode* n) { return n ? n->height : 0; }
+int getBalance(AVLNode* n) { return n ? height(n->left) - height(n->right) : 0; }
+
+AVLNode* rotateRight(AVLNode* y) {
+    AVLNode* x = y->left;
+    AVLNode* T2 = x->right;
+    x->right = y;
+    y->left = T2;
+    y->height = 1 + std::max(height(y->left), height(y->right));
+    x->height = 1 + std::max(height(x->left), height(x->right));
+    return x;
+}
+
+AVLNode* rotateLeft(AVLNode* x) {
+    AVLNode* y = x->right;
+    AVLNode* T2 = y->left;
+    y->left = x;
+    x->right = T2;
+    x->height = 1 + std::max(height(x->left), height(x->right));
+    y->height = 1 + std::max(height(y->left), height(y->right));
+    return y;
+}
+
+AVLNode* insert(AVLNode* node, int key) {
+    if (!node) return new AVLNode(key);
+    if (key < node->key) node->left = insert(node->left, key);
+    else if (key > node->key) node->right = insert(node->right, key);
+    else return node;
+
+    node->height = 1 + std::max(height(node->left), height(node->right));
+    int balance = getBalance(node);
+
+    // Left-Left (LL)
+    if (balance > 1 && key < node->left->key) return rotateRight(node);
+    // Right-Right (RR)
+    if (balance < -1 && key > node->right->key) return rotateLeft(node);
+    // Left-Right (LR)
+    if (balance > 1 && key > node->left->key) {
+        node->left = rotateLeft(node->left);
+        return rotateRight(node);
+    }
+    // Right-Left (RL)
+    if (balance < -1 && key < node->right->key) {
+        node->right = rotateRight(node->right);
+        return rotateLeft(node);
+    }
+    return node;
+}`,
+    quiz: [
+      {
+        id: "avl1",
+        question: "What is the maximum allowed difference in subtree heights for any node in an AVL tree?",
+        options: ["At most 1 (BF ∈ {-1, 0, 1})", "At most 0 (must be identical)", "At most 2", "Depends on array size"],
+        correctIndex: 0,
+        explanation:
+          "By definition, the AVL invariant requires that the left and right subtree heights differ by no more than ±1. Any imbalance trigger of ±2 immediately fires a rotation.",
+      },
+      {
+        id: "avl2",
+        question: "When a node has Balance Factor +2 and its left child has Balance Factor -1, which rotation is required?",
+        options: [
+          "Left-Right (LR) Double Rotation",
+          "Single Right Rotation (LL)",
+          "Single Left Rotation (RR)",
+          "No rotation needed",
+        ],
+        correctIndex: 0,
+        explanation:
+          "The LR case occurs when the left child is right-heavy (BF = -1). Rotating the child left converts the subtree into the LL case, followed by a right rotation on the parent.",
+      },
+    ],
+  },
+  disjointset: {
+    id: "disjointset",
+    name: "Disjoint Set Union (DSU / Union-Find)",
+    category: "Data Structures",
+    summary:
+      "Forest data structure tracking partitions of elements into disjoint dynamic sets. Supports Find (identifying representative root) and Union (merging two sets). Optimized with Path Compression and Union by Rank/Size to achieve near-linear O(α(n)) Inverse Ackermann amortized time.",
+    timeComplexity: {
+      best: "O(1)",
+      average: "O(α(n))",
+      worst: "O(α(n))",
+    },
+    spaceComplexity: "O(n)",
+    stable: true,
+    inPlace: true,
+    keyInvariants: [
+      "Representative Root: An element i is the root of its set if and only if parent[i] == i.",
+      "Path Compression: During find(x), repointing every traversed node directly to root flattens the tree for future queries.",
+      "Union by Rank: Always attaching the tree of smaller rank under the root of larger rank bounds tree height to O(log n) before compression.",
+    ],
+    cppCode: `class DisjointSet {
+    std::vector<int> parent, rank, size;
+public:
+    DisjointSet(int n) : parent(n), rank(n, 0), size(n, 1) {
+        for (int i = 0; i < n; ++i) parent[i] = i;
+    }
+
+    // O(α(n)) Find with Path Compression
+    int find(int i) {
+        if (parent[i] == i)
+            return i;
+        return parent[i] = find(parent[i]); // Path compression
+    }
+
+    // O(α(n)) Union by Rank
+    bool unite(int i, int j) {
+        int rootI = find(i);
+        int rootJ = find(j);
+        if (rootI == rootJ) return false; // Cycle detected!
+
+        if (rank[rootI] < rank[rootJ]) {
+            parent[rootI] = rootJ;
+            size[rootJ] += size[rootI];
+        } else if (rank[rootI] > rank[rootJ]) {
+            parent[rootJ] = rootI;
+            size[rootI] += size[rootJ];
+        } else {
+            parent[rootI] = rootJ;
+            rank[rootJ]++;
+            size[rootJ] += size[rootI];
+        }
+        return true;
+    }
+
+    bool connected(int i, int j) {
+        return find(i) == find(j);
+    }
+};`,
+    quiz: [
+      {
+        id: "dsu1",
+        question: "What is the primary function of Path Compression during the Find operation?",
+        options: [
+          "It flattens the tree by repointing visited nodes directly to the root, making future queries nearly O(1).",
+          "It sorts the elements in ascending order.",
+          "It frees memory back to the operating system.",
+          "It prevents duplicate keys from being inserted.",
+        ],
+        correctIndex: 0,
+        explanation:
+          "Path compression re-wires parent pointers to point directly to the set root as recursion unwinds, reducing tree depth to nearly 1.",
+      },
+      {
+        id: "dsu2",
+        question: "What does the Inverse Ackermann function α(n) bound to for any practical universe size (e.g., n ≤ 10^80)?",
+        options: [
+          "α(n) ≤ 4 (effectively constant O(1))",
+          "α(n) = n / 2",
+          "α(n) = log₂(n)",
+          "α(n) = n²",
+        ],
+        correctIndex: 0,
+        explanation:
+          "The Ackermann function grows extraordinarily fast, so its inverse α(n) grows so slowly that for any conceivable number of elements, α(n) ≤ 4, making DSU effectively O(1) in practice.",
+      },
+    ],
+  },
 };
 
 export function createArrayFromPreset(preset: ArrayPreset, size: number, customStr?: string): number[] {

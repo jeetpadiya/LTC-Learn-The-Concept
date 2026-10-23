@@ -23,6 +23,10 @@ import HashTableVisualizer from "@/components/HashTableVisualizer";
 import HashTableControls from "@/components/HashTableControls";
 import TrieVisualizer from "@/components/TrieVisualizer";
 import TrieControls from "@/components/TrieControls";
+import AvlVisualizer from "@/components/AvlVisualizer";
+import AvlControls from "@/components/AvlControls";
+import DisjointSetVisualizer from "@/components/DisjointSetVisualizer";
+import DisjointSetControls from "@/components/DisjointSetControls";
 import ArrayRow from "@/components/ArrayRow";
 import LegendStrip from "@/components/LegendStrip";
 import PlaybackBar from "@/components/PlaybackBar";
@@ -85,7 +89,19 @@ export default function Home() {
   const isHeap = selectedTopic === "heap";
   const isHashTable = selectedTopic === "hashtable";
   const isTrie = selectedTopic === "trie";
-  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable || isTrie;
+  const isAvl = selectedTopic === "avltree";
+  const isDisjointSet = selectedTopic === "disjointset";
+  const isStructure =
+    isTree ||
+    isGraph ||
+    isLinkedList ||
+    isStackQueue ||
+    isArray ||
+    isHeap ||
+    isHashTable ||
+    isTrie ||
+    isAvl ||
+    isDisjointSet;
 
   const currentStep = steps[currentStepIndex] || steps[0];
   const currentTreeStep = treeSteps[currentTreeStepIndex] || treeSteps[0];
@@ -202,7 +218,25 @@ export default function Home() {
 
           {/* Visualization Stage Container: Flex-fills available height cleanly */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            {isTrie ? (
+            {isAvl ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                {/* AVL Balanced Tree Visualizer with 3D OrbitControls & Balance Factors */}
+                <div className="flex-1 w-full min-h-0 overflow-hidden">
+                  <AvlVisualizer />
+                </div>
+                {/* Interactive AVL Operation Controls (Insert, Search, Rotations) */}
+                <AvlControls />
+              </div>
+            ) : isDisjointSet ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                {/* Disjoint Set Union Visualizer (Cluster Forest & Array Mapping) */}
+                <div className="flex-1 w-full min-h-0 overflow-hidden">
+                  <DisjointSetVisualizer />
+                </div>
+                {/* Interactive DSU Operation Controls (Find, Union, Connected) */}
+                <DisjointSetControls />
+              </div>
+            ) : isTrie ? (
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Trie Visualizer (Prefix Tree & Autocomplete Engine) */}
                 <div className="flex-1 w-full min-h-0 overflow-hidden">

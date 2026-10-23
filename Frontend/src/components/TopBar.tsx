@@ -41,7 +41,19 @@ export default function TopBar() {
   const isHeap = selectedTopic === "heap";
   const isHashTable = selectedTopic === "hashtable";
   const isTrie = selectedTopic === "trie";
-  const isStructure = isTree || isGraph || isLinkedList || isStackQueue || isArray || isHeap || isHashTable || isTrie;
+  const isAvl = selectedTopic === "avltree";
+  const isDisjointSet = selectedTopic === "disjointset";
+  const isStructure =
+    isTree ||
+    isGraph ||
+    isLinkedList ||
+    isStackQueue ||
+    isArray ||
+    isHeap ||
+    isHashTable ||
+    isTrie ||
+    isAvl ||
+    isDisjointSet;
 
   // Filled track percentage for N slider
   const nPct = ((arraySize - 5) / (24 - 5)) * 100;
@@ -108,6 +120,18 @@ export default function TopBar() {
               <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
               <span className="font-semibold text-[var(--text-primary)]">Trie (Prefix Tree)</span>
               <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">• Prefix Compression & Live Autocomplete</span>
+            </div>
+          ) : isAvl ? (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-raised)] text-xs">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+              <span className="font-semibold text-[var(--text-primary)]">AVL Balanced Tree</span>
+              <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">• Balance Factor & Rotations (LL, RR, LR, RL)</span>
+            </div>
+          ) : isDisjointSet ? (
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-raised)] text-xs">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent)]" />
+              <span className="font-semibold text-[var(--text-primary)]">Disjoint Set (Union-Find)</span>
+              <span className="text-[var(--text-muted)] text-[11px] hidden sm:inline">• Forest, Path Compression & Union by Rank</span>
             </div>
           ) : (
             <>

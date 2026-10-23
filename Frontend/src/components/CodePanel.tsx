@@ -321,8 +321,14 @@ export default function CodePanel() {
     hashStrategy,
     trieSteps,
     currentTrieStepIndex,
+    avlSteps,
+    currentAvlStepIndex,
+    dsuSteps,
+    currentDsuStepIndex,
   } = useVisualizerStore();
 
+  const isAvl = selectedTopic === "avltree";
+  const isDisjointSet = selectedTopic === "disjointset";
   const isTrie = selectedTopic === "trie";
   const isHashTable = selectedTopic === "hashtable";
   const isHeap = selectedTopic === "heap";
@@ -333,7 +339,11 @@ export default function CodePanel() {
   const isStackQueue = selectedTopic === "stackqueue";
   const algorithm = ALGORITHMS[selectedTopic];
 
-  const activeStep = isTrie
+  const activeStep = isAvl
+    ? avlSteps[currentAvlStepIndex]
+    : isDisjointSet
+    ? dsuSteps[currentDsuStepIndex]
+    : isTrie
     ? trieSteps[currentTrieStepIndex]
     : isHashTable
     ? hashTableSteps[currentHashTableStepIndex]

@@ -26,6 +26,8 @@ const DATA_STRUCTURE_TOPICS = [
   { id: "heap", title: "Binary Heap & Priority Queue", desc: "Min/Max Heap, 2i+1 Array Mapping, Sift-Up/Down" },
   { id: "hashtable", title: "Hash Table & Collisions", desc: "Separate Chaining, Linear Probing, Rehashing" },
   { id: "trie", title: "Trie (Prefix Tree)", desc: "Prefix Compression, Word Search, Autocomplete" },
+  { id: "avltree", title: "AVL Balanced Tree", desc: "Balance Factor, LL/RR/LR/RL Rotations" },
+  { id: "disjointset", title: "Disjoint Set (Union-Find)", desc: "Forest, Path Compression, Union by Rank" },
   { id: "linkedlist", title: "Singly & Doubly Linked List", desc: "Pointers, In-Place Reversal, O(1) Head" },
   { id: "stackqueue", title: "Stack & Queue (LIFO/FIFO)", desc: "Push, Pop, Enqueue, Dequeue Buffers" },
   { id: "bst", title: "Binary Search Tree (BST)", desc: "3D Nodes, Insert, Search, Delete" },
@@ -33,8 +35,8 @@ const DATA_STRUCTURE_TOPICS = [
 ];
 
 const UNRELEASED_STRUCTURES = [
-  { id: "avltree", title: "AVL & Red-Black Balanced Tree" },
-  { id: "disjointset", title: "Disjoint Set (Union-Find)" },
+  { id: "segmenttree", title: "Segment Tree & Fenwick Tree" },
+  { id: "redblack", title: "Red-Black Tree (Color Invariants)" },
 ];
 
 // Miniature SVG Progress Ring

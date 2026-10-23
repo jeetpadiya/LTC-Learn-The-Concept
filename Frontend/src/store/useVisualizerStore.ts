@@ -16,6 +16,9 @@ import {
   HashTableTraceStep,
   HashCollisionStrategy,
   TrieTraceStep,
+  AvlTraceStep,
+  DsuElement,
+  DsuTraceStep,
 } from "@/types/visualizer";
 import { ALGORITHMS, createArrayFromPreset, getAlgorithmTrace } from "@/lib/algorithms";
 import {
@@ -84,6 +87,20 @@ import {
   generateTrieAutocompleteTrace,
   generateTrieDeleteTrace,
 } from "@/lib/trieEngine";
+import {
+  AvlRawNode,
+  AVL_PRESETS,
+  buildAvlTreeFromValues,
+  generateAvlInsertTrace,
+  generateAvlSearchTrace,
+} from "@/lib/avlEngine";
+import {
+  DSU_PRESETS,
+  createInitialDsu,
+  generateFindTrace,
+  generateUnionTrace,
+  generateConnectedTrace,
+} from "@/lib/disjointSetEngine";
 import { ThemeMode } from "@/styles/tokens";
 
 interface PredictState {
@@ -286,6 +303,27 @@ interface VisualizerStore {
   seekTrieStep: (index: number) => void;
   stepForwardTrie: () => void;
   stepBackwardTrie: () => void;
+
+  // AVL & Balanced Tree State & Actions
+  avlSteps: AvlTraceStep[];
+  currentAvlStepIndex: number;
+  insertIntoAvlTree: (val: number) => void;
+  searchInAvlTree: (val: number) => void;
+  resetAvlTreePreset: (presetKey?: string) => void;
+  seekAvlStep: (index: number) => void;
+  stepForwardAvl: () => void;
+  stepBackwardAvl: () => void;
+
+  // Disjoint Set Union (DSU) State & Actions
+  dsuSteps: DsuTraceStep[];
+  currentDsuStepIndex: number;
+  findInDsu: (id: number) => void;
+  unionInDsu: (x: number, y: number) => void;
+  checkConnectedDsu: (x: number, y: number) => void;
+  resetDsuPreset: (presetKey?: string) => void;
+  seekDsuStep: (index: number) => void;
+  stepForwardDsu: () => void;
+  stepBackwardDsu: () => void;
 
   // Backend C++ Status
   isBackendOnline: boolean;
@@ -1730,6 +1768,155 @@ export const useVisualizerStore = create<VisualizerStore>((set, get) => ({
 
   stepBackwardTrie: () => {
     set((s) => ({ currentTrieStepIndex: Math.max(0, s.currentTrieStepIndex - 1) }));
+  },
+
+  // AVL & Balanced Tree State & Actions
+  avlSteps: (() => {
+    const { initialSteps } = buildAvlTreeFromValues(AVL_PRESETS.balanced.values);
+    return initialSteps;
+  })(),
+  currentAvlStepIndex: 0,
+  _avlRoot: (() => {
+    const { root } = buildAvlTreeFromValues(AVL_PRESETS.balanced.values);
+    return root;
+  })() as AvlRawNode | undefined,
+
+  insertIntoAvlTree: (val) => {
+    const currentRoot = (get() as any)._avlRoot;
+    const { steps, newRoot } = generateAvlInsertTrace(currentRoot, val);
+    set({
+      _avlRoot: newRoot,
+      avlSteps: steps,
+      currentAvlStepIndex: 0,
+      isPlaying: false,
+    } as any);
+  },
+
+  searchInAvlTree: (val) => {
+    const currentRoot = (get() as any)._avlRoot;
+    const steps = generateAvlSearchTrace(currentRoot, val);
+    set({
+      avlSteps: steps,
+      currentAvlStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  resetAvlTreePreset: (presetKey = "balanced") => {
+    const preset = AVL_PRESETS[presetKey] || AVL_PRESETS.balanced;
+    const { root, initialSteps } = buildAvlTreeFromValues(preset.values);
+    set({
+      _avlRoot: root,
+      avlSteps: initialSteps,
+      currentAvlStepIndex: 0,
+      isPlaying: false,
+    } as any);
+  },
+
+  seekAvlStep: (index) => {
+    const total = get().avlSteps.length;
+    set({ currentAvlStepIndex: Math.max(0, Math.min(index, total - 1)), isPlaying: false });
+  },
+
+  stepForwardAvl: () => {
+    const { currentAvlStepIndex, avlSteps } = get();
+    if (currentAvlStepIndex < avlSteps.length - 1) {
+      set({ currentAvlStepIndex: currentAvlStepIndex + 1 });
+    } else {
+      set({ isPlaying: false });
+    }
+  },
+
+  stepBackwardAvl: () => {
+    set((s) => ({ currentAvlStepIndex: Math.max(0, s.currentAvlStepIndex - 1) }));
+  },
+
+  // Disjoint Set Union (DSU) State & Actions
+  dsuSteps: (() => {
+    const initialElements = createInitialDsu(8);
+    return [
+      {
+        stepIndex: 0,
+        operation: "init" as const,
+        elements: initialElements,
+        description: "Initialized Disjoint Set Union with 8 singleton sets (A through H).",
+        reasoning: "Each element i starts as its own representative root (parent[i] == i, rank = 0, size = 1).",
+        codeLine: 1,
+        inlineVariables: { totalSets: 8 },
+      },
+    ];
+  })(),
+  currentDsuStepIndex: 0,
+  _dsuElements: createInitialDsu(8),
+
+  findInDsu: (id) => {
+    const currentElements = (get() as any)._dsuElements || createInitialDsu(8);
+    const { steps, finalElements } = generateFindTrace(currentElements, id);
+    set({
+      _dsuElements: finalElements,
+      dsuSteps: steps,
+      currentDsuStepIndex: 0,
+      isPlaying: false,
+    } as any);
+  },
+
+  unionInDsu: (x, y) => {
+    const currentElements = (get() as any)._dsuElements || createInitialDsu(8);
+    const { steps, finalElements } = generateUnionTrace(currentElements, x, y);
+    set({
+      _dsuElements: finalElements,
+      dsuSteps: steps,
+      currentDsuStepIndex: 0,
+      isPlaying: false,
+    } as any);
+  },
+
+  checkConnectedDsu: (x, y) => {
+    const currentElements = (get() as any)._dsuElements || createInitialDsu(8);
+    const steps = generateConnectedTrace(currentElements, x, y);
+    set({
+      dsuSteps: steps,
+      currentDsuStepIndex: 0,
+      isPlaying: false,
+    });
+  },
+
+  resetDsuPreset: (presetKey = "reset") => {
+    const preset = DSU_PRESETS[presetKey] || DSU_PRESETS.reset;
+    const elements = preset.apply();
+    const initialStep: DsuTraceStep = {
+      stepIndex: 0,
+      operation: "init",
+      elements,
+      description: `Loaded DSU preset: ${preset.name}.`,
+      reasoning: preset.desc,
+      codeLine: 1,
+      inlineVariables: { preset: preset.name, totalElements: elements.length },
+    };
+    set({
+      _dsuElements: elements,
+      dsuSteps: [initialStep],
+      currentDsuStepIndex: 0,
+      isPlaying: false,
+    } as any);
+  },
+
+  seekDsuStep: (index) => {
+    const total = get().dsuSteps.length;
+    set({ currentDsuStepIndex: Math.max(0, Math.min(index, total - 1)), isPlaying: false });
+  },
+
+  stepForwardDsu: () => {
+    const { currentDsuStepIndex, dsuSteps } = get();
+    if (currentDsuStepIndex < dsuSteps.length - 1) {
+      set({ currentDsuStepIndex: currentDsuStepIndex + 1 });
+    } else {
+      set({ isPlaying: false });
+    }
+  },
+
+  stepBackwardDsu: () => {
+    set((s) => ({ currentDsuStepIndex: Math.max(0, s.currentDsuStepIndex - 1) }));
   },
 
   // Backend C++ Status
